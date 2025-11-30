@@ -67,7 +67,7 @@ export default function PartnersPage() {
 
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
 
             {/* 3. Передайте функцію для відкриття модалки в Header */}
             <Header onProfileClick={() => setIsProfileOpen(true)} />
@@ -80,23 +80,20 @@ export default function PartnersPage() {
 
             {/* ОСНОВНИЙ КОНТЕНТ */}
             <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-8 border-b pb-4">
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
                     Усі Партнери
                 </h1>
 
                 {isLoading ? (
-                    <div className="text-center text-gray-500 py-10">Завантаження...</div>
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">Завантаження...</div>
                 ) : error ? (
-                    <div className="text-center text-red-600 py-10">{error}</div>
+                    <div className="text-center text-red-600 dark:text-red-400 py-10">{error}</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {restaurants.map((restaurant) => (
                             <RestaurantCard
                                 key={restaurant.id}
                                 restaurant={restaurant}
-                                defaultBanner={defaultBanner}
-                                defaultLogo={defaultLogo}
-                                renderStarRating={renderStarRating}
                             />
                         ))}
                     </div>

@@ -50,10 +50,10 @@ export default function RestaurantCard({ restaurant }) {
         // ⬅️ ВИПРАВЛЕННЯ: Додано зовнішній відступ mb-8
         <Link 
             href={`/menu/${restaurant.id}`} 
-            className="block bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden no-underline text-gray-900 mb-8"
+            className="block bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl dark:hover:shadow-2xl transition-shadow duration-300 overflow-hidden no-underline text-gray-900 dark:text-white mb-4 sm:mb-6 md:mb-8 border border-gray-100 dark:border-gray-700"
         >
             {/* 1. Банер та контейнер для лого */}
-            <div className="relative h-40 bg-gray-200">
+            <div className="relative h-32 sm:h-40 bg-gray-200 dark:bg-gray-700">
                 <Image
                     src={restaurant.bannerUrl || defaultBanner}
                     alt={`Banner for ${restaurant.name}`}
@@ -63,7 +63,7 @@ export default function RestaurantCard({ restaurant }) {
                 />
                 
                 {/* 2. Логотип (зліва вгорі, в кругу) - Імітуємо дизайн зі скріншота */}
-                <div className="absolute top-3 left-3 w-12 h-12 rounded-full bg-white border-2 border-white overflow-hidden shadow-md p-1 flex items-center justify-center">
+                <div className="absolute top-2 left-2 sm:top-3 sm:left-3 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white dark:bg-gray-800 border-2 border-white dark:border-gray-700 overflow-hidden shadow-md p-1 flex items-center justify-center">
                     <Image
                         src={restaurant.logoUrl || defaultLogo}
                         alt={`${restaurant.name} Logo`}
@@ -75,15 +75,15 @@ export default function RestaurantCard({ restaurant }) {
             </div>
             
             {/* 3. Текстовий контент */}
-            <div className="p-4 relative">
+            <div className="p-3 sm:p-4 relative">
                 {/* Назва */}
-                <h2 className="text-xl font-bold mb-1">{restaurant.name}</h2>
+                <h2 className="text-lg sm:text-xl font-bold mb-1 text-gray-900 dark:text-white line-clamp-1">{restaurant.name}</h2>
                 
                 {/* Опис */}
-                <p className="text-sm text-gray-700 mb-1">{restaurant.description || 'A warm and welcoming place for coffee lovers'}</p>
+                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 line-clamp-2">{restaurant.description || 'A warm and welcoming place for coffee lovers'}</p>
                 
                 {/* Адреса */}
-                <p className="text-xs text-gray-400 mb-3">{restaurant.address || 'Адреса не вказана.'}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 sm:mb-3 line-clamp-1">{restaurant.address || 'Адреса не вказана.'}</p>
                 
                 {/* Рейтинг */}
                 <StarRating rating={rating} /> 

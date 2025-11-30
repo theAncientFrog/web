@@ -8,7 +8,7 @@ import Pusher from 'pusher-js';
 import OrderDetailsModal from './OrderDetailsModal';
 
 // ▼▼▼ ТИПИ ТА ІНТЕРФЕЙСИ ▼▼▼
-type OrderStatus = 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED';
+type OrderStatus = 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
 type OrderItemDetail = { name: string; quantity: number; price: number; };
 
 type OrderDisplay = {
@@ -24,6 +24,7 @@ const getStatusDetails = (status: OrderStatus) => {
         case 'READY': return { icon: CheckCircle, text: 'Готове до видачі!', color: 'text-green-600 bg-green-100' };
         case 'PREPARING': return { icon: Utensils, text: 'Готується', color: 'text-yellow-600 bg-yellow-100' };
         case 'COMPLETED': return { icon: Package, text: 'Завершено', color: 'text-gray-600 bg-gray-100' };
+        case 'CANCELLED': return { icon: X, text: 'Скасовано', color: 'text-red-600 bg-red-100' };
         default: return { icon: Clock, text: 'Очікує прийняття', color: 'text-red-600 bg-red-100' };
     }
 };
@@ -145,22 +146,22 @@ export default function MyOrdersModal({ isOpen, onClose, restaurantId }: MyOrder
 
             {/* Основна модалка історії замовлень */}
             <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-4 z-50" onClick={onClose}>
-                <div className="bg-white rounded-xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                    <button className="absolute top-3 right-4 text-2xl text-gray-400 cursor-pointer z-10 hover:text-gray-600" onClick={onClose}>
+                <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-xl shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    <button className="absolute top-3 right-4 text-2xl text-gray-400 dark:text-gray-500 cursor-pointer z-10 hover:text-gray-600 dark:hover:text-gray-300" onClick={onClose}>
                         <X size={24} />
                     </button>
                     
-                    <h2 className="text-2xl font-bold text-gray-900 p-6 pb-0">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white p-6 pb-0">
                         Мої Замовлення
                     </h2>
 
                     <div className="p-6 overflow-y-auto flex-grow space-y-4">
                         {isLoading ? (
-                            <p className="text-center text-gray-500 py-8">Завантаження...</p>
+                            <p className="text-center text-gray-500 dark:text-gray-400 py-8">Завантаження...</p>
                         ) : error ? (
-                            <p className="text-center text-red-600 py-8">{error}</p>
+                            <p className="text-center text-red-600 dark:text-red-400 py-8">{error}</p>
                         ) : orders.length === 0 ? (
-                            <p className="text-center text-gray-500 py-8">Ви ще не робили замовлень.</p>
+                            <p className="text-center text-gray-500 dark:text-gray-400 py-8">Ви ще не робили замовлень.</p>
                         ) : (
                             orders.map((order) => {
                                 const details = getStatusDetails(order.status);
@@ -168,19 +169,19 @@ export default function MyOrdersModal({ isOpen, onClose, restaurantId }: MyOrder
                                 const hasItems = order.items && order.items.length > 0;
                                 
                                 return (
-                                    <div key={order.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <div key={order.id} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
                                         <div className="flex justify-between items-center mb-2">
-                                            <h3 className="text-lg font-bold">Замовлення #{order.id}</h3>
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Замовлення #{order.id}</h3>
                                             <div className={`flex items-center text-xs font-semibold px-2 py-1 rounded-full ${details.color}`}>
                                                 <details.icon size={14} className="mr-1"/>
                                                 {details.text}
                                             </div>
                                         </div>
-                                        <p className="text-gray-700 text-sm mb-1">
+                                        <p className="text-gray-700 dark:text-gray-300 text-sm mb-1">
                                             Дата: {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString()}
                                         </p>
-                                        <div className="flex justify-between items-end pt-2 border-t border-gray-200 mt-2">
-                                            <span className="text-xl font-extrabold text-indigo-600">
+                                        <div className="flex justify-between items-end pt-2 border-t border-gray-200 dark:border-gray-600 mt-2">
+                                            <span className="text-xl font-extrabold text-indigo-600 dark:text-indigo-400">
                                                 {order.totalPrice.toFixed(2)} грн
                                             </span>
                                             
@@ -188,13 +189,13 @@ export default function MyOrdersModal({ isOpen, onClose, restaurantId }: MyOrder
                                             {hasItems ? (
                                                 <button 
                                                     onClick={() => openDetails(order)}
-                                                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-semibold transition"
+                                                    className="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-semibold transition"
                                                 >
                                                     <Eye size={18} />
                                                     Переглянути замовлення
                                                 </button>
                                             ) : (
-                                                <span className="text-xs text-gray-400">Деталі відсутні</span>
+                                                <span className="text-xs text-gray-400 dark:text-gray-500">Деталі відсутні</span>
                                             )}
                                         </div>
                                     </div>
@@ -204,7 +205,7 @@ export default function MyOrdersModal({ isOpen, onClose, restaurantId }: MyOrder
                     </div>
 
                     <div className="p-6 pt-0 flex-shrink-0">
-                        <button onClick={onClose} className="w-full bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-bold hover:bg-gray-300 transition">
+                        <button onClick={onClose} className="w-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-4 py-3 rounded-lg font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition">
                             Закрити
                         </button>
                     </div>

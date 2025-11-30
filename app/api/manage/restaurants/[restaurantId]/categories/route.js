@@ -36,16 +36,77 @@ export async function GET(request, { params }) {
         }
 
         // Отримуємо категорії цього ресторану
-        const categories = await prisma.category.findMany({
+        // Спочатку отримуємо всі категорії (і батьківські, і дочірні)
+        const allCategories = await prisma.category.findMany({
             where: {
                 restaurantId: restaurantId,
+            },
+            include: {
+                _count: {
+                    select: {
+                        dishes: true,
+                        subcategories: true,
+                    },
+                },
+                subcategories: {
+                    include: {
+                        _count: {
+                            select: {
+                                dishes: true,
+                            },
+                        },
+                    },
+                },
             },
             orderBy: {
                 name: 'asc',
             },
         });
+        
+        // Для зручності обробки, зберігаємо всі категорії
+        const categories = allCategories;
 
-        return NextResponse.json(categories, { status: 200 });
+        // Додаємо item_count до кожної категорії
+        // Для головних категорій (parentId == null) - рахуємо страви з усіх підкатегорій
+        // Для підкатегорій (parentId != null) - рахуємо безпосередньо прив'язані страви
+        const categoriesWithCount = await Promise.all(
+            categories.map(async (category) => {
+                const { _count, subcategories, ...categoryWithoutCount } = category;
+                
+                let itemCount = 0;
+                
+                if (category.parentId === null) {
+                    // Головна категорія - рахуємо страви з усіх підкатегорій
+                    const subcategoryIds = subcategories.map(sub => sub.id);
+                    if (subcategoryIds.length > 0) {
+                        itemCount = await prisma.dish.count({
+                            where: {
+                                categoryId: {
+                                    in: subcategoryIds,
+                                },
+                            },
+                        });
+                    }
+                } else {
+                    // Підкатегорія - рахуємо безпосередньо прив'язані страви
+                    itemCount = _count.dishes;
+                }
+                
+                // Обробляємо підкатегорії, додаючи item_count до кожної
+                const subcategoriesWithCount = subcategories.map(sub => ({
+                    ...sub,
+                    item_count: sub._count.dishes,
+                }));
+                
+                return {
+                    ...categoryWithoutCount,
+                    item_count: itemCount,
+                    subcategories: subcategoriesWithCount,
+                };
+            })
+        );
+
+        return NextResponse.json(categoriesWithCount, { status: 200 });
 
     } catch (error) {
         console.error('Error fetching categories:', error);
@@ -81,11 +142,28 @@ export async function POST(request, { params }) {
             return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
         }
 
+        // Перевіряємо, чи батьківська категорія існує і належить цьому ресторану (якщо вказана)
+        if (data.parentId) {
+            const parentCategory = await prisma.category.findFirst({
+                where: {
+                    id: data.parentId,
+                    restaurantId: restaurantId,
+                    parentId: null, // Батьківська категорія не може мати свого батька
+                },
+            });
+
+            if (!parentCategory) {
+                return NextResponse.json({ error: 'Parent category not found or invalid' }, { status: 400 });
+            }
+        }
+
         // Створюємо нову категорію
         const newCategory = await prisma.category.create({
             data: {
                 name: data.name,
                 description: data.description,
+                iconName: data.iconName || null, // Іконка тільки для батьківських категорій
+                parentId: data.parentId || null, // Якщо вказано - створюємо підкатегорію
                 restaurantId: restaurantId, // Прив'язуємо до ресторану
             },
         });

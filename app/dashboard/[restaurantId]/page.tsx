@@ -22,7 +22,7 @@ type Order = {
     totalPrice: number;
     userName: string;
     items: ItemDetails[];
-    status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED';
+    status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
 };
 
 // 💡 1. Тип даних, що надходять з API (при завантаженні історії)
@@ -68,6 +68,7 @@ const getStatusColor = (status: Order['status']) => {
         case 'READY': return 'text-green-600 bg-green-100';
         case 'PREPARING': return 'text-yellow-600 bg-yellow-100';
         case 'COMPLETED': return 'text-gray-600 bg-gray-100';
+        case 'CANCELLED': return 'text-red-600 bg-red-100';
         default: return 'text-red-600 bg-red-100';
     }
 };
@@ -77,6 +78,7 @@ const STATUS_PRIORITY = {
     'PREPARING': 2,
     'PENDING': 3,
     'COMPLETED': 4,
+    'CANCELLED': 5,
 };
 
 const sortOrders = (orders: Order[]) => {
@@ -179,12 +181,23 @@ export default function RestaurantDashboard() {
             setOrders(prev => sortOrders([newOrder, ...prev]));
         });
 
-        // Слухач ОНОВЛЕННЯ СТАТУСУ (цей код був коректним)
+        // Слухач ОНОВЛЕННЯ СТАТУСУ
         channel.bind('order-status-update', (data: { orderId: number, newStatus: Order['status'] }) => {
             console.log('Pusher: Отримано оновлення статусу!', data);
             setOrders(prev => {
                 const updatedOrders = prev.map(order =>
                     order.id === data.orderId ? { ...order, status: data.newStatus } : order
+                );
+                return sortOrders(updatedOrders);
+            });
+        });
+
+        // Слухач СКАСУВАННЯ ЗАМОВЛЕННЯ (якщо потрібно окремо)
+        channel.bind('order-cancelled', (data: { orderId: number }) => {
+            console.log('Pusher: Отримано скасування замовлення!', data);
+            setOrders(prev => {
+                const updatedOrders = prev.map(order =>
+                    order.id === data.orderId ? { ...order, status: 'CANCELLED' as Order['status'] } : order
                 );
                 return sortOrders(updatedOrders);
             });
@@ -200,7 +213,7 @@ export default function RestaurantDashboard() {
     }, [restaurantId]);
 
 
-    // 3. Зміна статусу (Цей код був коректним)
+    // 3. Зміна статусу
     const handleStatusChange = async (orderId: number, currentStatus: Order['status']) => {
         let newStatus: Order['status'];
 
@@ -235,36 +248,87 @@ export default function RestaurantDashboard() {
         }
     };
 
+    // 4. Скасування замовлення
+    const handleCancelOrder = async (orderId: number) => {
+        if (!confirm('Ви впевнені, що хочете скасувати це замовлення?')) {
+            return;
+        }
+
+        // 1. Оптимістичне оновлення UI
+        setOrders(prev => {
+            const updatedOrders = prev.map(order =>
+                order.id === orderId ? { ...order, status: 'CANCELLED' as Order['status'] } : order
+            );
+            return sortOrders(updatedOrders);
+        });
+
+        // 2. Виклик API для скасування
+        try {
+            const res = await fetch(`/api/manage/order/${orderId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'CANCELLED' }),
+            });
+
+            if (!res.ok) {
+                throw new Error('Не вдалося скасувати замовлення на сервері.');
+            }
+        } catch (error) {
+            console.error("Помилка скасування замовлення:", error);
+            alert('Не вдалося скасувати замовлення. Спробуйте ще раз.');
+            // Відкат стану - перезавантажуємо замовлення
+            const res = await fetch(`/api/orders/restaurant/${restaurantId}`, {
+                cache: 'no-store'
+            });
+            if (res.ok) {
+                const data: ApiOrderResponse[] = await res.json();
+                const transformedOrders: Order[] = data.map(order => ({
+                    id: order.id,
+                    createdAt: order.createdAt,
+                    totalPrice: order.totalPrice,
+                    status: order.status as Order['status'],
+                    userName: order.user?.name || 'Клієнт',
+                    items: order.items.map(item => ({
+                        name: item.dish.name,
+                        quantity: item.quantity,
+                        price: item.priceAtPurchase
+                    }))
+                }));
+                setOrders(sortOrders(transformedOrders));
+            }
+        }
+    };
+
     // --- РЕНДЕР ---
 
     if (isLoading) return <div className="p-8 text-center text-gray-500">Завантаження історії замовлень...</div>;
     if (error) return <div className="p-8 text-center text-red-600">Помилка: {error}</div>;
 
     return (
-        <main className="w-full min-h-screen bg-gray-50 p-4 sm:p-8">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-                    <Utensils size={32} className="text-indigo-600"/>
-                    Кухня (Дашборд) - Ресторан #{restaurantId}
+        <main className="w-full min-h-screen bg-gray-50 p-3 sm:p-4 md:p-8">
+            <header className="mb-4 sm:mb-6 md:mb-8">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <Utensils size={24} className="sm:w-8 sm:h-8 text-indigo-600 flex-shrink-0"/>
+                    <span className="break-words">Кухня (Дашборд) - Ресторан #{restaurantId}</span>
                 </h1>
-                <p className="text-gray-500 mt-1">Очікують на прийняття: {orders.filter(o => o.status === 'PENDING').length || 0}</p>
+                <p className="text-sm sm:text-base text-gray-500 mt-1">Очікують на прийняття: {orders.filter(o => o.status === 'PENDING').length || 0}</p>
             </header>
 
             {/* Список замовлень */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {orders.length > 0 ? (
                     orders.map((order) => (
                         // Картка замовлення
-                        <div key={order.id} className={`bg-white rounded-xl shadow-lg border flex flex-col justify-between p-6 ${order.status === 'PENDING' ? 'border-red-200' : 'border-gray-100'}`}>
+                        <div key={order.id} className={`bg-white rounded-xl shadow-lg border flex flex-col justify-between p-4 sm:p-6 ${order.status === 'PENDING' ? 'border-red-200' : 'border-gray-100'}`}>
 
                             {/* Хедер картки */}
-                            <div className="mb-4">
-                                <div className={`inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full ${getStatusColor(order.status)} mb-2`}>
-                                    {order.status === 'PENDING' ? <Clock size={14} className="mr-1"/> : <Timer size={14} className="mr-1"/>}
-                                    {order.status}
+                            <div className="mb-3 sm:mb-4">
+                                <div className={`inline-flex items-center text-xs font-semibold px-2 sm:px-3 py-1 rounded-full ${getStatusColor(order.status)} mb-2`}>
+                                    {order.status === 'PENDING' ? <Clock size={12} className="sm:w-3.5 sm:h-3.5 mr-1"/> : <Timer size={12} className="sm:w-3.5 sm:h-3.5 mr-1"/>}
+                                    <span className="text-xs">{order.status}</span>
                                 </div>
-                                <h3 className="text-xl font-bold mb-1">Замовлення #{order.id}</h3>
-                                <p className="text-sm text-gray-600">Клієнт: {order.userName}</p>
+                                <h3 className="text-lg sm:text-xl font-bold mb-1">Замовлення #{order.id}</h3>
+                                <p className="text-xs sm:text-sm text-gray-600 truncate">Клієнт: {order.userName}</p>
                                 <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('uk-UA')}</p>
                             </div>
 
@@ -281,39 +345,68 @@ export default function RestaurantDashboard() {
                             </div>
 
                             {/* Футер картки */}
-                            <div className="mt-4 flex justify-between items-center">
-                <span className="text-lg font-extrabold text-indigo-600">
-                  Всього: {order.totalPrice.toFixed(2)} грн
-                </span>
+                            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
+                                <span className="text-base sm:text-lg font-extrabold text-indigo-600">
+                                  Всього: {order.totalPrice.toFixed(2)} грн
+                                </span>
 
-                                {/* Кнопка дії */}
-                                {order.status === 'PENDING' && (
-                                    <button
-                                        onClick={() => handleStatusChange(order.id, 'PENDING')}
-                                        className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition shadow-sm"
-                                    >
-                                        Прийняти
-                                    </button>
-                                )}
-                                {order.status === 'PREPARING' && (
-                                    <button
-                                        onClick={() => handleStatusChange(order.id, 'PREPARING')}
-                                        className="bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600 transition shadow-sm"
-                                    >
-                                        Готово
-                                    </button>
-                                )}
-                                {order.status === 'READY' && (
-                                    <button
-                                        onClick={() => handleStatusChange(order.id, 'READY')}
-                                        className="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer hover:bg-gray-500 transition shadow-sm"
-                                    >
-                                        Видати
-                                    </button>
-                                )}
-                                {order.status === 'COMPLETED' && (
-                                    <span className="text-sm font-medium text-gray-500">Завершено</span>
-                                )}
+                                {/* Кнопки дій */}
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    {order.status === 'PENDING' && (
+                                        <>
+                                            <button
+                                                onClick={() => handleStatusChange(order.id, 'PENDING')}
+                                                className="flex-1 sm:flex-none bg-green-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-green-600 transition shadow-sm"
+                                            >
+                                                Прийняти
+                                            </button>
+                                            <button
+                                                onClick={() => handleCancelOrder(order.id)}
+                                                className="flex-1 sm:flex-none bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-red-600 transition shadow-sm"
+                                            >
+                                                Скасувати
+                                            </button>
+                                        </>
+                                    )}
+                                    {order.status === 'PREPARING' && (
+                                        <>
+                                            <button
+                                                onClick={() => handleStatusChange(order.id, 'PREPARING')}
+                                                className="flex-1 sm:flex-none bg-indigo-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-indigo-600 transition shadow-sm"
+                                            >
+                                                Готово
+                                            </button>
+                                            <button
+                                                onClick={() => handleCancelOrder(order.id)}
+                                                className="flex-1 sm:flex-none bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-red-600 transition shadow-sm"
+                                            >
+                                                Скасувати
+                                            </button>
+                                        </>
+                                    )}
+                                    {order.status === 'READY' && (
+                                        <>
+                                            <button
+                                                onClick={() => handleStatusChange(order.id, 'READY')}
+                                                className="flex-1 sm:flex-none bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer hover:bg-gray-500 transition shadow-sm"
+                                            >
+                                                Видати
+                                            </button>
+                                            <button
+                                                onClick={() => handleCancelOrder(order.id)}
+                                                className="flex-1 sm:flex-none bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-red-600 transition shadow-sm"
+                                            >
+                                                Скасувати
+                                            </button>
+                                        </>
+                                    )}
+                                    {order.status === 'COMPLETED' && (
+                                        <span className="text-sm font-medium text-gray-500">Завершено</span>
+                                    )}
+                                    {order.status === 'CANCELLED' && (
+                                        <span className="text-sm font-medium text-red-500">Скасовано</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     ))

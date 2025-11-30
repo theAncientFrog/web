@@ -90,7 +90,7 @@ export default function ManageRestaurantsPage() {
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
                     <header className="flex justify-between items-center mb-8 pb-6 border-b border-gray-200 flex-wrap gap-4">
                         <div className="manageHeaderTitle">
-                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-600 uppercase">MANAGER MODE</h1>
+                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">MANAGER MODE</h1>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -136,11 +136,10 @@ export default function ManageRestaurantsPage() {
                                         {/* manageRestaurantImage */}
                                         <div className="relative w-full h-48 md:w-48 md:h-28 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                                             <Image
-                                                src={restaurant.logoUrl || '/images/placeholder.jpg'}
+                                                src={restaurant.bannerUrl || restaurant.logoUrl || '/images/placeholder.jpg'}
                                                 alt={restaurant.name}
-                                                layout="fill"
-                                                objectFit="cover"
-                                                className="absolute inset-0 w-full h-full object-cover"
+                                                fill
+                                                className="object-cover"
                                             />
                                         </div>
                                         {/* manageRestaurantInfo */}
@@ -148,9 +147,9 @@ export default function ManageRestaurantsPage() {
                                             <h3 className="m-0 mb-2 text-lg sm:text-xl font-semibold">{restaurant.name}</h3>
                                             <p className="m-0 mb-4 text-gray-500 text-sm line-clamp-2">{restaurant.description || 'No description'}</p>
                                             <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-                                                <span><strong>{/* TODO */}</strong> Categories</span>
-                                                <span><strong className="text-black">{restaurant.orders?.length || 0}</strong> Orders</span>
-                                                <span><strong className="text-black">${/* TODO */}</strong> Revenue</span>
+                                                <span><strong className="text-black">{restaurant.categoriesCount || 0}</strong> Categories</span>
+                                                <span><strong className="text-black">{restaurant.ordersCount || 0}</strong> Orders</span>
+                                                <span><strong className="text-black">{new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(restaurant.revenue || 0)}</strong> Revenue</span>
                                             </div>
                                         </div>
                                         {/* manageRestaurantActions */}

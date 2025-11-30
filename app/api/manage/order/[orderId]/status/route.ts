@@ -15,7 +15,7 @@ const pusher = new Pusher({
 });
 
 // ▼▼▼ Явне визначення допустимих статусів ▼▼▼
-type OrderStatus = 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED';
+type OrderStatus = 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
 
 export async function PUT(
     request: Request,
@@ -39,7 +39,8 @@ export async function PUT(
             'PREPARING': 'прийнято до приготування! 👨‍🍳',
             'READY': 'готове та очікує видачі! 🛎️',
             'PENDING': 'очікує',
-            'COMPLETED': 'видано'
+            'COMPLETED': 'видано',
+            'CANCELLED': 'скасовано ❌'
         } as const;
 
         // 4. Оновлення статусу в базі даних
@@ -58,6 +59,7 @@ export async function PUT(
         });
 
         // 💡 --- 5. ДОДАНО ЛОГІКУ НАРАХУВАННЯ XP ---
+        // XP нараховується тільки для завершених замовлень, не для скасованих
         if (newStatus === 'COMPLETED') {
             // Формула: 1 гривня = 1 XP.
             // Ви можете змінити, наприклад: Math.floor(updatedOrder.totalPrice * 0.5)

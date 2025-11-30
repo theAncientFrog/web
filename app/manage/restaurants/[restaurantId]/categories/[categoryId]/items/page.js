@@ -128,7 +128,7 @@ export default function ManageItemsPage() {
                     {/* manageHeader */}
                     <header className="flex justify-between items-center mb-8 pb-6 border-b border-gray-200 flex-wrap gap-4">
                         <div className="manageHeaderTitle">
-                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-600 uppercase">MANAGER MODE</h1>
+                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">MANAGER MODE</h1>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-700">
                            {/* profileIcon */}

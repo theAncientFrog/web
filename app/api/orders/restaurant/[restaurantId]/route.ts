@@ -42,13 +42,14 @@ export async function GET(request: Request, { params }: RouteParams) {
             return NextResponse.json({ message: 'Доступ заборонено (Ви не власник)' }, { status: 403 });
         }
 
-        // 4. Отримуємо замовлення з УСІМА вкладеними даними
+        // 4. Отримуємо замовлення з УСІМА вкладеними даними (включаючи скасовані та завершені)
         const orders = await prisma.order.findMany({
             where: {
                 restaurantId: restaurantIdNum,
-                status: {
-                    in: ['PENDING', 'PREPARING', 'READY']
-                }
+                // Включаємо всі статуси, щоб менеджер міг бачити всі замовлення
+                // status: {
+                //     in: ['PENDING', 'PREPARING', 'READY', 'COMPLETED', 'CANCELLED']
+                // }
             },
             include: {
                 user: {

@@ -2,16 +2,47 @@
 'use client';
 
 import { useState } from 'react';
+import { 
+    Utensils, Coffee, Wine, Package, IceCream, Pizza, 
+    Apple, Fish, Beef, Salad, Cookie, Cake, Milk, 
+    Soup, Cherry 
+} from 'lucide-react';
 
-export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, restaurantId }) {
+// Список доступних іконок для категорій
+const CATEGORY_ICONS = [
+    { name: 'Utensils', component: Utensils, label: 'Столові прибори' },
+    { name: 'Coffee', component: Coffee, label: 'Кава' },
+    { name: 'Wine', component: Wine, label: 'Вино' },
+    { name: 'Package', component: Package, label: 'Упаковка' },
+    { name: 'IceCream', component: IceCream, label: 'Морозиво' },
+    { name: 'Pizza', component: Pizza, label: 'Піца' },
+    { name: 'Apple', component: Apple, label: 'Яблуко' },
+    { name: 'Fish', component: Fish, label: 'Риба' },
+    { name: 'Beef', component: Beef, label: 'М\'ясо' },
+    { name: 'Salad', component: Salad, label: 'Салат' },
+    { name: 'Cookie', component: Cookie, label: 'Печиво' },
+    { name: 'Cake', component: Cake, label: 'Торт' },
+    { name: 'Milk', component: Milk, label: 'Молоко' },
+    { name: 'Soup', component: Soup, label: 'Суп' },
+    { name: 'Cherry', component: Cherry, label: 'Вишня' },
+];
+
+export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, restaurantId, existingCategories = [] }) {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [selectedIcon, setSelectedIcon] = useState(null);
+    const [parentCategoryId, setParentCategoryId] = useState(null); // ID батьківської категорії
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+
+    // Отримуємо тільки батьківські категорії для вибору
+    const parentCategories = existingCategories.filter(cat => cat.parentId === null);
 
     const handleClose = () => {
         setName('');
         setDescription('');
+        setSelectedIcon(null);
+        setParentCategoryId(null);
         setError('');
         setIsLoading(false);
         onClose();
@@ -28,7 +59,12 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, res
             const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, description }),
+                body: JSON.stringify({ 
+                    name, 
+                    description,
+                    iconName: parentCategoryId ? null : selectedIcon, // Іконка тільки для батьківських категорій
+                    parentId: parentCategoryId || null // Якщо вибрано батьківську - створюємо підкатегорію
+                }),
             });
 
             const data = await res.json();
@@ -80,6 +116,31 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, res
                                 required
                             />
                         </div>
+                        {/* Вибір батьківської категорії */}
+                        <div className="mb-5 text-left">
+                            <label htmlFor="parentCategory" className="block font-medium mb-2 text-sm text-gray-700">
+                                Батьківська категорія (optional)
+                            </label>
+                            <select
+                                id="parentCategory"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                                value={parentCategoryId || ''}
+                                onChange={(e) => setParentCategoryId(e.target.value ? parseInt(e.target.value) : null)}
+                            >
+                                <option value="">-- Створити батьківську категорію --</option>
+                                {parentCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {parentCategoryId 
+                                    ? 'Буде створена підкатегорія' 
+                                    : 'Буде створена батьківська категорія'}
+                            </p>
+                        </div>
+
                         {/* inputGroup */}
                         <div className="mb-5 text-left">
                             <label htmlFor="catDesc" className="block font-medium mb-2 text-sm text-gray-700">Description (optional)</label>
@@ -93,6 +154,45 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, res
                                 rows="3"
                             />
                         </div>
+
+                        {/* Вибір іконки - тільки для батьківських категорій */}
+                        {!parentCategoryId && (
+                            <div className="mb-5 text-left">
+                                <label className="block font-medium mb-3 text-sm text-gray-700">Іконка категорії (optional)</label>
+                            <div className="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto p-2 border border-gray-200 rounded-lg bg-gray-50 scrollbar-hide">
+                                {CATEGORY_ICONS.map((icon) => {
+                                    const IconComponent = icon.component;
+                                    const isSelected = selectedIcon === icon.name;
+                                    return (
+                                        <button
+                                            key={icon.name}
+                                            type="button"
+                                            onClick={() => setSelectedIcon(isSelected ? null : icon.name)}
+                                            className={`p-2 sm:p-3 rounded-lg border-2 transition-all flex flex-col items-center justify-center gap-1 ${
+                                                isSelected
+                                                    ? 'border-blue-500 bg-blue-50'
+                                                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                                            }`}
+                                            title={icon.label}
+                                        >
+                                            <IconComponent 
+                                                size={20} 
+                                                className={`sm:w-6 sm:h-6 ${isSelected ? 'text-blue-600' : 'text-gray-600'}`} 
+                                            />
+                                            <span className="text-[9px] sm:text-[10px] text-gray-500 truncate w-full text-center leading-tight">
+                                                {icon.label}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                                {selectedIcon && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Вибрано: {CATEGORY_ICONS.find(icon => icon.name === selectedIcon)?.label}
+                                    </p>
+                                )}
+                            </div>
+                        )}
 
                         {/* loginError */}
                         {error && <p className="text-red-700 bg-red-100 border border-red-300 rounded-lg p-3 text-sm text-center mt-4">{error}</p>}

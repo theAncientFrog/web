@@ -31,7 +31,7 @@ export async function GET() {
              return NextResponse.json({ message: 'Некоректний ID користувача' }, { status: 400 });
         }
 
-        // 3. ОТРИМУЄМО РЕСТОРАНИ
+        // 3. ОТРИМУЄМО РЕСТОРАНИ З СТАТИСТИКОЮ
         const restaurants = await prisma.restaurant.findMany({
             where: {
                 ownerId: ownerId, // Тепер ми передаємо число
@@ -39,14 +39,48 @@ export async function GET() {
             orderBy: {
                 name: 'asc',
             },
-            include: {
-                orders: {
-                    select: { id: true }
-                }
-            }
         });
 
-        return NextResponse.json(restaurants, { status: 200 });
+        // 4. ДОДАЄМО СТАТИСТИКУ ДЛЯ КОЖНОГО РЕСТОРАНУ
+        const restaurantsWithStats = await Promise.all(
+            restaurants.map(async (restaurant) => {
+                // Підрахунок головних категорій (тільки батьківські категорії)
+                const categoriesCount = await prisma.category.count({
+                    where: {
+                        restaurantId: restaurant.id,
+                        parentId: null, // Тільки головні категорії
+                    },
+                });
+
+                // Підрахунок всіх замовлень
+                const ordersCount = await prisma.order.count({
+                    where: {
+                        restaurantId: restaurant.id,
+                    },
+                });
+
+                // Підрахунок виручки (сума всіх замовлень)
+                const revenueResult = await prisma.order.aggregate({
+                    where: {
+                        restaurantId: restaurant.id,
+                    },
+                    _sum: {
+                        totalPrice: true,
+                    },
+                });
+
+                const revenue = revenueResult._sum.totalPrice || 0;
+
+                return {
+                    ...restaurant,
+                    categoriesCount,
+                    ordersCount,
+                    revenue,
+                };
+            })
+        );
+
+        return NextResponse.json(restaurantsWithStats, { status: 200 });
 
     } catch (error) {
         console.error('Error fetching owner restaurants:', error);

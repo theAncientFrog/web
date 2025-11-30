@@ -1,6 +1,8 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = []
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -8,46 +10,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enum для типів ачівок
-enum AchievementType {
-  TOTAL_ORDERS
-  UNIQUE_RESTAURANTS
-  // CUSTOM_LOGIC // Можна додати для ачівок типу "Coffee Lover"
-}
-
 enum Role {
   CUSTOMER
   OWNER
 }
 
-model User {
-  id            Int       @id @default(autoincrement())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-
-  role Role @default(CUSTOMER)
-
-  // 💡 --- ВИДАЛЕНО ---
-  // level    Int  @default(1)
-  // progress Int  @default(0)
-  // --- КІНЕЦЬ ---
-
-  accounts Account[]
-  sessions Session[]
-
-  restaurants     Restaurant[]
-  orders          Order[]
-  UserAchievement UserAchievement[]
-
-  // 💡 --- ДОДАНО ---
-  // Зв'язок зі статистикою по ресторанах
-  restaurantStats UserRestaurantStats[]
-  // --- КІНЕЦЬ ---
+enum MainCategoryType {
+  FOOD
+  DRINKS
+  ALCOHOL
+  MERCH
 }
 
+// --- ОНОВЛЕНА Модель Користувача ---
+model User {
+  id                  Int                   @id @default(autoincrement())
+  name                String?
+  email               String?               @unique
+  emailVerified       DateTime?
+  image               String?
+  password            String?
+  role                Role                  @default(CUSTOMER)
+  level               Int                   @default(1)
+  progress            Int                   @default(0)
+  
+  // Зв'язки NextAuth
+  accounts            Account[]
+  sessions            Session[]
+  
+  // Ваші зв'язки
+  restaurants         Restaurant[]
+  orders              Order[]
+  userRestaurantStats UserRestaurantStats[]
+  userCategoryStats   UserCategoryStats[]
+  userAchievements    UserAchievement[]
+}
+
+// --- НОВІ МОДЕЛІ ДЛЯ NEXT-AUTH ---
 model Account {
   id                Int     @id @default(autoincrement())
   userId            Int
@@ -61,8 +60,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -83,112 +81,113 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Restaurant {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String?
-  bannerUrl   String?
-  logoUrl     String?
-  address     String?
-
-  stars Float @default(5.0)
-
-  ownerId    Int
-  owner      User       @relation(fields: [ownerId], references: [id])
-  categories Category[]
-
-  orders Order[] @relation("OrderToRestaurant")
-
-  // 💡 --- ДОДАНО ---
-  // Зв'язок зі статистикою по користувачах
-  userStats UserRestaurantStats[]
-  // --- КІНЕЦЬ ---
-}
-
-// 💡 --- НОВА МОДЕЛЬ ---
-// Зберігає досвід (XP) користувача для КОЖНОГО ресторану
+// --- НОВІ МОДЕЛІ ---
 model UserRestaurantStats {
-  id           Int @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   userId       Int
   restaurantId Int
-  xp           Int @default(0) // Досвід
+  xp           Int        @default(0)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-
-  // Унікальний індекс, щоб один юзер мав лише один запис XP на ресторан
   @@unique([userId, restaurantId])
 }
 
-// --- КІНЕЦЬ НОВОЇ МОДЕЛІ ---
+model UserCategoryStats {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  categoryId   Int
+  restaurantId Int
+  xp           Int        @default(0)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+}
+
+// --- Ваші існуючі моделі ---
+model Restaurant {
+  id                  Int                   @id @default(autoincrement())
+  name                String
+  description         String?
+  imageUrl            String?
+  bannerUrl           String?
+  logoUrl             String?
+  address             String?
+  stars               Float?
+  ownerId             Int
+  owner               User                  @relation(fields: [ownerId], references: [id])
+  categories          Category[]
+  orders              Order[]
+  userRestaurantStats UserRestaurantStats[]
+  userCategoryStats   UserCategoryStats[]
+}
 
 model Category {
-  id           Int        @id @default(autoincrement())
+  id           Int     @id @default(autoincrement())
   name         String
   description  String?
+  iconName     String? // Назва іконки для батьківської категорії
+  mainType     MainCategoryType?
+  parentId     Int?
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  parent       Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  subcategories Category[] @relation("CategoryHierarchy")
   dishes       Dish[]
+  userCategoryStats UserCategoryStats[]
 }
 
 model Dish {
-  id          Int      @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   name        String
   description String?
   price       Float
   calories    Int?
   imageUrl    String?
   categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
-
-  orderItems OrderItem[]
-}
-
-model OrderItem {
-  id              Int   @id @default(autoincrement())
-  orderId         Int
-  dishId          Int
-  quantity        Int
-  priceAtPurchase Float
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  dish  Dish  @relation(fields: [dishId], references: [id])
+  category    Category    @relation(fields: [categoryId], references: [id])
+  orderItems  OrderItem[]
 }
 
 model Order {
-  id           Int      @id @default(autoincrement())
-  createdAt    DateTime @default(now())
+  id           Int         @id @default(autoincrement())
+  createdAt    DateTime    @default(now())
   totalPrice   Float
+  status       String      @default("PENDING")
   userId       Int
-  user         User     @relation(fields: [userId], references: [id])
   restaurantId Int
+  user         User        @relation(fields: [userId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  items        OrderItem[]
+}
 
-  restaurant Restaurant @relation("OrderToRestaurant", fields: [restaurantId], references: [id])
-
-  status String @default("PENDING") // Напр. PENDING, COMPLETED, CANCELLED
-
-  items OrderItem[]
+model OrderItem {
+  id              Int     @id @default(autoincrement())
+  quantity        Int
+  price           Float
+  priceAtPurchase Float?  // Ціна на момент покупки (може бути null для старих записів)
+  orderId         Int
+  dishId          Int
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dish            Dish    @relation(fields: [dishId], references: [id])
 }
 
 model Achievement {
-  id          String  @id @default(cuid())
-  code        String  @unique // Унікальний код, напр. "FOODIE_1"
-  name        String // "Гурман 1-го рівня"
-  description String // "Зробити 1 завершене замовлення"
-  iconUrl     String? // URL для іконки ачівки
-
-  // Динамічні правила
-  type      AchievementType @default(TOTAL_ORDERS)
-  threshold Int             @default(1)
-
-  users UserAchievement[]
+  id          Int    @id @default(autoincrement())
+  code        String @unique
+  name        String
+  description String
+  iconUrl     String?
+  userAchievements UserAchievement[]
 }
 
 model UserAchievement {
-  id            String   @id @default(cuid())
+  id            Int       @id @default(autoincrement())
   userId        Int
-  achievementId String
-  unlockedAt    DateTime @default(now())
+  achievementId Int
+  unlockedAt    DateTime  @default(now())
 
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)

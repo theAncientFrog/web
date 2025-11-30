@@ -71,7 +71,7 @@ export default function VerifyEmailPage() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            className="mt-1 block w-full rounded-md bg-white border-gray-300 shadow-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="your@email.com"
                         />
                     </div>
@@ -88,7 +88,7 @@ export default function VerifyEmailPage() {
                             required
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            className="mt-1 block w-full rounded-md bg-white border-gray-300 shadow-sm text-gray-900 focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="123456"
                         />
                     </div>

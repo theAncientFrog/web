@@ -55,7 +55,7 @@ export default function SignupPage() {
                         <input
                             type="text"
                             id="name"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             placeholder="Введіть ваше ім'я"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -70,7 +70,7 @@ export default function SignupPage() {
                         <input
                             type="email"
                             id="email"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             placeholder="Введіть e-mail"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
@@ -85,7 +85,7 @@ export default function SignupPage() {
                         <input
                             type="password"
                             id="password"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             placeholder="Введіть пароль"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}

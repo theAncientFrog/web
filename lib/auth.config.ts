@@ -60,21 +60,43 @@ export const authOptions: AuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       // При першому логіні додаємо дані користувача
       if (user) {
         const prismaUser = user as User;
         token.id = prismaUser.id;
         token.role = prismaUser.role;
+        token.name = prismaUser.name;
+        token.email = prismaUser.email;
+        token.image = prismaUser.image;
       }
 
-      // Якщо токен існує, але роль не збережена — дістаємо з БД
-      if (token.id && !token.role) {
+      // Якщо токен існує, але дані не збережені — дістаємо з БД
+      if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as number },
-          select: { role: true },
+          select: { role: true, name: true, email: true, image: true },
         });
-        if (dbUser) token.role = dbUser.role;
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.image = dbUser.image;
+        }
+      }
+
+      // Оновлюємо дані при trigger === 'update'
+      if (trigger === 'update' && token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as number },
+          select: { role: true, name: true, email: true, image: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+          token.name = dbUser.name;
+          token.email = dbUser.email;
+          token.image = dbUser.image;
+        }
       }
 
       return token;
@@ -84,6 +106,9 @@ export const authOptions: AuthOptions = {
       if (session.user) {
         session.user.id = token.id as number;
         session.user.role = token.role as Role;
+        session.user.name = token.name as string | null;
+        session.user.email = token.email as string | null;
+        session.user.image = token.image as string | null;
       }
       return session;
     },

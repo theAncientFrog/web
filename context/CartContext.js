@@ -2,6 +2,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 const CartContext = createContext();
 
@@ -14,44 +15,70 @@ export const CartProvider = ({ children }) => {
     // Стан, щоб уникнути помилок гідратації при роботі з localStorage
     const [isCartLoaded, setIsCartLoaded] = useState(false);
 
-    // 💡 2. Завантаження кошика з localStorage при першому завантаженні
+    // 💡 Отримуємо сесію для доступу до userId
+    const { data: session, status } = useSession();
+    const userId = session?.user?.id;
+
+    // 💡 Функція для отримання ключів localStorage з урахуванням userId
+    // Використовуємо useMemo, щоб уникнути зайвих перерахунків
+    const storageKeys = userId 
+        ? {
+            items: `cartItems_${userId}`,
+            restaurant: `cartRestaurantId_${userId}`
+        }
+        : {
+            items: 'cartItems_guest',
+            restaurant: 'cartRestaurantId_guest'
+        };
+
+    // 💡 2. Завантаження кошика з localStorage при першому завантаженні або зміні користувача
     useEffect(() => {
+        // Чекаємо, поки сесія завантажиться
+        if (status === 'loading') return;
+
         try {
-            const itemsFromStorage = localStorage.getItem('cartItems');
-            const restaurantIdFromStorage = localStorage.getItem('cartRestaurantId');
+            const itemsFromStorage = localStorage.getItem(storageKeys.items);
+            const restaurantIdFromStorage = localStorage.getItem(storageKeys.restaurant);
             
             if (itemsFromStorage) {
                 setCartItems(JSON.parse(itemsFromStorage));
+            } else {
+                setCartItems([]);
             }
+            
             if (restaurantIdFromStorage) {
                 setCartRestaurantId(restaurantIdFromStorage);
+            } else {
+                setCartRestaurantId(null);
             }
         } catch (error) {
             console.error("Failed to load cart from localStorage", error);
             // Очищуємо сховище у разі пошкоджених даних
-            localStorage.removeItem('cartItems');
-            localStorage.removeItem('cartRestaurantId');
+            localStorage.removeItem(storageKeys.items);
+            localStorage.removeItem(storageKeys.restaurant);
+            setCartItems([]);
+            setCartRestaurantId(null);
         }
         setIsCartLoaded(true);
-    }, []);
+    }, [status, userId]); // Завантажуємо кошик при зміні користувача
 
     // 💡 3. Збереження кошика в localStorage при будь-яких змінах
     useEffect(() => {
-        // Не зберігаємо, поки кошик не завантажено
-        if (!isCartLoaded) return; 
+        // Не зберігаємо, поки кошик не завантажено або сесія не завантажена
+        if (!isCartLoaded || status === 'loading') return; 
         
         try {
-            localStorage.setItem('cartItems', JSON.stringify(cartItems));
+            localStorage.setItem(storageKeys.items, JSON.stringify(cartItems));
             
             if (cartRestaurantId) {
-                localStorage.setItem('cartRestaurantId', cartRestaurantId);
+                localStorage.setItem(storageKeys.restaurant, cartRestaurantId);
             } else {
-                localStorage.removeItem('cartRestaurantId');
+                localStorage.removeItem(storageKeys.restaurant);
             }
         } catch (error) {
             console.error("Failed to save cart to localStorage", error);
         }
-    }, [cartItems, cartRestaurantId, isCartLoaded]);
+    }, [cartItems, cartRestaurantId, isCartLoaded, status, userId, storageKeys]);
 
     /**
      * 💡 4. ОНОВЛЕНА ФУНКЦІЯ addToCart
@@ -90,12 +117,19 @@ export const CartProvider = ({ children }) => {
 
     /**
      * 💡 5. ОНОВЛЕНА ФУНКЦІЯ clearCart
-     * Тепер також очищує ID ресторану
+     * Тепер також очищує ID ресторану та localStorage для поточного користувача
      */
     const clearCart = () => {
         setCartItems([]);
-        setCartRestaurantId(null); 
-        // localStorage очиститься автоматично завдяки useEffect
+        setCartRestaurantId(null);
+        
+        // Очищуємо localStorage для поточного користувача
+        try {
+            localStorage.removeItem(storageKeys.items);
+            localStorage.removeItem(storageKeys.restaurant);
+        } catch (error) {
+            console.error("Failed to clear cart from localStorage", error);
+        }
     };
 
     // --- Інші функції кошика (оновлені, щоб скидати restaurantId) ---

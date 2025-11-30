@@ -54,8 +54,11 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
             // Успіх!
             alert('Ваше замовлення успішно оформлено! Очікуйте підтвердження на Кухні.');
             
-            clearCart(); 
-            onClose(); // Закриваємо модалку
+            clearCart();
+            // Невелика затримка перед закриттям, щоб дати час API оновити дані
+            setTimeout(() => {
+                onClose(); // Закриваємо модалку
+            }, 500);
 
         } catch (err) {
             console.error('Order error:', err);
@@ -74,29 +77,29 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
 
     return (
         // profileOverlay
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-4 z-50" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-3 sm:p-4 z-50" onClick={onClose}>
             {/* profileModal + cartModal (max-w-lg) */}
-            <div className="bg-white rounded-xl w-full max-w-lg shadow-2xl relative flex flex-col max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 {/* profileCloseButton */}
-                <button className="absolute top-3 right-4 text-2xl text-gray-400 cursor-pointer z-10 hover:text-gray-600" onClick={onClose}>
-                    <X size={24} />
+                <button className="absolute top-2 right-3 sm:top-3 sm:right-4 text-2xl text-gray-400 dark:text-gray-500 cursor-pointer z-10 hover:text-gray-600 dark:hover:text-gray-300" onClick={onClose}>
+                    <X size={20} className="sm:w-6 sm:h-6" />
                 </button>
                 
                 {/* modalTitle */}
-                <h2 className="text-2xl font-bold text-gray-900 p-6 pb-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white p-4 sm:p-6 pb-0">
                     Ваш Кошик
                 </h2>
 
                 {/* cartModalContent */}
-                <div className="p-6 overflow-y-auto flex-grow">
+                <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
                     {/* cartItemsList */}
                     {cartItems.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8">Ваш кошик порожній.</p>
+                        <p className="text-center text-gray-500 dark:text-gray-400 py-8">Ваш кошик порожній.</p>
                     ) : (
                         <div className="max-h-[40vh] overflow-y-auto pr-2">
                             {cartItems.map((item) => (
                                 // cartItem
-                                <div key={item.id} className="flex items-center gap-4 py-4 border-b border-gray-200 last:border-b-0">
+                                <div key={item.id} className="flex items-center gap-2 sm:gap-4 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
                                     {/* cartItemImage */}
                                     <div className="flex-shrink-0">
                                         <Image
@@ -104,36 +107,36 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
                                             alt={item.name}
                                             width={50}
                                             height={50}
-                                            className="rounded-lg object-cover"
+                                            className="rounded-lg object-cover w-12 h-12 sm:w-[50px] sm:h-[50px]"
                                         />
                                     </div>
                                     {/* cartItemDetails */}
-                                    <div className="flex-grow text-left overflow-hidden">
-                                        <span className="block font-medium mb-1 text-sm truncate">{item.name}</span>
-                                        <span className="text-sm text-gray-600">{item.price} грн</span>
+                                    <div className="flex-grow text-left overflow-hidden min-w-0">
+                                        <span className="block font-medium mb-1 text-xs sm:text-sm truncate text-gray-900 dark:text-white">{item.name}</span>
+                                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{item.price} грн</span>
                                     </div>
                                     {/* cartItemQuantity */}
-                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                         <button 
                                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                            className="bg-gray-100 rounded-full w-7 h-7 text-lg leading-7 cursor-pointer text-gray-600 flex items-center justify-center transition hover:bg-gray-200"
+                                            className="bg-gray-100 dark:bg-gray-700 rounded-full w-6 h-6 sm:w-7 sm:h-7 text-lg leading-7 cursor-pointer text-gray-600 dark:text-gray-300 flex items-center justify-center transition hover:bg-gray-200 dark:hover:bg-gray-600"
                                         >
-                                            <Minus size={16}/>
+                                            <Minus size={14} className="sm:w-4 sm:h-4"/>
                                         </button>
-                                        <span className="font-medium min-w-[20px] text-center">{item.quantity}</span>
+                                        <span className="font-medium min-w-[16px] sm:min-w-[20px] text-center text-xs sm:text-sm text-gray-900 dark:text-white">{item.quantity}</span>
                                         <button 
                                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                            className="bg-gray-100 rounded-full w-7 h-7 text-lg leading-7 cursor-pointer text-gray-600 flex items-center justify-center transition hover:bg-gray-200"
+                                            className="bg-gray-100 dark:bg-gray-700 rounded-full w-6 h-6 sm:w-7 sm:h-7 text-lg leading-7 cursor-pointer text-gray-600 dark:text-gray-300 flex items-center justify-center transition hover:bg-gray-200 dark:hover:bg-gray-600"
                                         >
-                                            <Plus size={16}/>
+                                            <Plus size={14} className="sm:w-4 sm:h-4"/>
                                         </button>
                                     </div>
                                     {/* cartItemRemove */}
                                     <button 
-                                        className="bg-none border-none text-lg text-gray-400 cursor-pointer px-2 flex-shrink-0 transition hover:text-red-500" 
+                                        className="bg-none border-none text-lg text-gray-400 dark:text-gray-500 cursor-pointer px-1 sm:px-2 flex-shrink-0 transition hover:text-red-500 dark:hover:text-red-400" 
                                         onClick={() => removeFromCart(item.id)}
                                     >
-                                        <Trash2 size={18} />
+                                        <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
                                     </button>
                                 </div>
                             ))}
@@ -144,7 +147,7 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
                 {/* loginError (з адаптованими margin) */}
                 {error && (
                     <div className="px-6 pb-4">
-                        <p className="text-red-700 bg-red-100 border border-red-300 rounded-lg p-3 text-sm text-center">
+                        <p className="text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-3 text-sm text-center">
                             {error}
                         </p>
                     </div>
@@ -152,15 +155,15 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
 
                 {/* cartFooter */}
                 {cartItems.length > 0 && (
-                    <div className="border-t border-gray-200 pt-6 p-6 flex-shrink-0">
+                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 p-4 sm:p-6 flex-shrink-0">
                         {/* cartTotal */}
-                        <div className="flex justify-between text-lg font-bold mb-6">
+                        <div className="flex justify-between text-base sm:text-lg font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">
                             <span>Разом:</span>
                             <span>{cartTotal.toFixed(2)} грн</span>
                         </div>
                         {/* Кнопка "Замовити" (зелена) */}
                         <button
-                            className="w-full px-4 py-3 rounded-lg font-medium text-base bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="w-full px-4 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
                             onClick={handlePlaceOrder}
                             disabled={isLoading}
                         >

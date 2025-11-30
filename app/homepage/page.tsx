@@ -6,8 +6,7 @@ import EstablishmentsSection from '@/app/components/EstablishmentsSection';
 import Header from '@/app/components/Header';
 import HowItWorksBanner from '@/app/components/banners/HowItWorksBanner';
 import ProfileModal from '@/app/components/ProfileModal'; // <--- 3. Імпортовано модальне вікно профілю
-
-// Footer не був на вашому скріншоті, тому я його поки не додаю
+import Footer from '@/app/components/Footer';
 
 const Homepage: React.FC = () => { // <-- Я перейменував з DashboardPage, бо це homepage
 
@@ -22,7 +21,7 @@ const Homepage: React.FC = () => { // <-- Я перейменував з Dashboa
     return (
         // Ваш скріншот показує 'flex-col min-h-screen bg-gray-50', але не показує 'div'
         // Я припускаю, що це батьківський div
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
             <Header
                 breadcrumpText="Breadcrump"
                 description="Смак починається з мене"
@@ -34,6 +33,8 @@ const Homepage: React.FC = () => { // <-- Я перейменував з Dashboa
                 <EstablishmentsSection />
                 <HowItWorksBanner />
             </main>
+
+            <Footer />
 
             {/* 7. ВИПРАВЛЕННЯ:
         Помилка TS2741 означає, що <ProfileModal> ОБОВ'ЯЗКОВО

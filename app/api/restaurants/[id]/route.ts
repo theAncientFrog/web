@@ -25,7 +25,8 @@ export async function GET(request: Request, { params }: RouteParams) {
                 id: true,
                 name: true,
                 description: true,
-                logoUrl: true,   
+                logoUrl: true,
+                bannerUrl: true,   
                 address: true,   
                 stars: true      
             }

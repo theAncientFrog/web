@@ -16,7 +16,7 @@ export async function GET() {
     }
 
     try {
-        const [achievementsCount, visitedCount] = await prisma.$transaction([
+        const [achievementsCount, visitedCount, totalOrdersCount] = await prisma.$transaction([
 
             // Запит 1: Рахуємо ачівки
             prisma.userAchievement.count({
@@ -33,12 +33,18 @@ export async function GET() {
                     }
                 },
                 distinct: ['restaurantId'] // Рахуємо тільки унікальні ID
+            }),
+
+            // Запит 3: Загальна кількість замовлень
+            prisma.order.count({
+                where: { userId: userId }
             })
         ]);
 
         return NextResponse.json({
             achievementsCount: achievementsCount,
-            visitedCount: visitedCount
+            visitedCount: visitedCount,
+            totalOrdersCount: totalOrdersCount
         });
 
     } catch (error) {

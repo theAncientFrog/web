@@ -10,14 +10,23 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 import { checkAndAwardAchievements } from '@/lib/achievementService'; // 💡 1. Імпорт Ачівок
 
-// Ініціалізація Pusher
-const pusher = new Pusher({
-    appId: process.env.PUSHER_APP_ID!,
-    key: process.env.PUSHER_KEY!,
-    secret: process.env.PUSHER_SECRET!,
-    cluster: process.env.PUSHER_CLUSTER!,
-    useTLS: true,
-});
+// Ініціалізація Pusher (тільки якщо змінні оточення налаштовані)
+let pusher: Pusher | null = null;
+try {
+    if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET && process.env.PUSHER_CLUSTER) {
+        pusher = new Pusher({
+            appId: process.env.PUSHER_APP_ID,
+            key: process.env.PUSHER_KEY,
+            secret: process.env.PUSHER_SECRET,
+            cluster: process.env.PUSHER_CLUSTER,
+            useTLS: true,
+        });
+    } else {
+        console.warn('[Pusher] Змінні оточення не налаштовані. Pusher буде вимкнено.');
+    }
+} catch (error) {
+    console.error('[Pusher] Помилка ініціалізації:', error);
+}
 
 // Тип для даних, що надходять з кошика клієнта
 type CartItem = {
@@ -37,6 +46,7 @@ type PusherItemDetails = {
 type OrderItemCreateData = {
     dishId: number;
     quantity: number;
+    price: number; // Ціна для OrderItem
     priceAtPurchase: number; // Зберігаємо ціну на момент покупки
 };
 
@@ -73,7 +83,18 @@ export async function POST(request: Request) {
 
         const dishesFromDb = await prisma.dish.findMany({
             where: { id: { in: dishIds } },
-            include: { category: { select: { restaurantId: true } } }
+            include: { 
+                category: { 
+                    include: {
+                        parent: {
+                            select: {
+                                id: true,
+                                parentId: true
+                            }
+                        }
+                    }
+                } 
+            }
         });
 
         if (dishesFromDb.length !== cart.length) {
@@ -109,7 +130,8 @@ export async function POST(request: Request) {
                 itemsToCreate.push({
                     dishId: cartItem.dishId,
                     quantity: cartItem.quantity,
-                    priceAtPurchase: details.price,
+                    price: details.price, // Ціна для OrderItem
+                    priceAtPurchase: details.price, // Ціна на момент покупки
                 });
 
                 itemsForPusher.push({
@@ -121,84 +143,342 @@ export async function POST(request: Request) {
         }
 
         // 6. ЗБЕРЕЖЕННЯ В БД (Транзакція)
-        const savedOrder = await prisma.order.create({
-            data: {
-                userId: userId,
-                restaurantId: numericRestaurantId,
-                totalPrice: totalPrice,
-                status: 'PENDING', // 💡 Статус замовлення
-                items: {
-                    create: itemsToCreate,
-                }
-            },
-            include: {
-                items: {
-                    include: { dish: { select: { name: true } } }
-                },
-                user: {
-                    select: { name: true, email: true }
-                }
-            }
+        console.log('[Order] Створення замовлення:', {
+            userId,
+            restaurantId: numericRestaurantId,
+            totalPrice,
+            itemsCount: itemsToCreate.length
         });
 
-        // 7. PUSHER: Сповіщаємо власника ресторану
-        // ... (Ваш Pusher код залишається тут) ...
-        const channelName = `restaurant-${restaurantId}`;
-        const eventName = 'new-order';
-
-        const pusherPayload = {
-            message: `Нове замовлення! (ID: ${savedOrder.id})`,
-            order: {
-                id: savedOrder.id,
-                totalPrice: savedOrder.totalPrice,
-                status: savedOrder.status,
-                createdAt: savedOrder.createdAt,
-                items: savedOrder.items.map(item => ({
-                    name: item.dish.name,
+        let savedOrder;
+        try {
+            console.log('[Order] Дані для створення замовлення:', {
+                userId,
+                restaurantId: numericRestaurantId,
+                totalPrice,
+                itemsCount: itemsToCreate.length,
+                itemsPreview: itemsToCreate.slice(0, 3).map(item => ({
+                    dishId: item.dishId,
                     quantity: item.quantity,
+                    price: item.price,
                     priceAtPurchase: item.priceAtPurchase
                 }))
-            },
-            userName: savedOrder.user.name || session.user.name || 'Анонімний клієнт',
-            userEmail: savedOrder.user.email || session.user.email,
-        };
+            });
 
-        await pusher.trigger(channelName, eventName, pusherPayload);
+            savedOrder = await prisma.order.create({
+                data: {
+                    userId: userId,
+                    restaurantId: numericRestaurantId,
+                    totalPrice: totalPrice,
+                    status: 'PENDING', // 💡 Статус замовлення
+                    items: {
+                        create: itemsToCreate,
+                    }
+                },
+                include: {
+                    items: {
+                        include: { dish: { select: { name: true } } }
+                    },
+                    user: {
+                        select: { name: true, email: true }
+                    }
+                }
+            });
+            console.log('[Order] ✅ Замовлення успішно створено:', savedOrder.id);
+        } catch (prismaError: any) {
+            console.error('[Order] ❌ Помилка Prisma при створенні замовлення:', {
+                code: prismaError.code,
+                message: prismaError.message,
+                meta: prismaError.meta,
+                stack: prismaError.stack
+            });
+            
+            // Повертаємо більш зрозуміле повідомлення про помилку
+            if (prismaError instanceof Prisma.PrismaClientKnownRequestError) {
+                if (prismaError.code === 'P2003') {
+                    return NextResponse.json({ 
+                        message: 'Помилка зв\'язку даних. Перевірте, чи всі страви та ресторан існують.' 
+                    }, { status: 400 });
+                }
+                if (prismaError.code === 'P2002') {
+                    return NextResponse.json({ 
+                        message: 'Помилка: дублікат запису. Спробуйте ще раз.' 
+                    }, { status: 400 });
+                }
+            }
+            
+            return NextResponse.json({ 
+                message: `Помилка при створенні замовлення: ${prismaError.message}` 
+            }, { status: 500 });
+        }
 
-        // 💡 --- 8. НОВА ЛОГІКА РІВНІВ (XP) ---
-        // Ми додаємо XP тільки якщо замовлення вважається "завершеним"
-        // ЗАРАЗ: Ми додаємо XP одразу. Якщо ви хочете додавати XP тільки
-        // коли статус 'COMPLETED', вам потрібно буде перенести цю логіку
-        // в інший API-роут, який оновлює статус замовлення.
+        // 7. PUSHER: Сповіщаємо власника ресторану
+        // Обробка помилок Pusher, щоб не блокувати створення замовлення
+        if (pusher) {
+            try {
+                const channelName = `restaurant-${restaurantId}`;
+                const eventName = 'new-order';
 
-        // 1 грн = 1 XP
-        const xpGained = Math.floor(totalPrice);
+                const pusherPayload = {
+                    message: `Нове замовлення! (ID: ${savedOrder.id})`,
+                    order: {
+                        id: savedOrder.id,
+                        totalPrice: savedOrder.totalPrice,
+                        status: savedOrder.status,
+                        createdAt: savedOrder.createdAt,
+                        items: savedOrder.items.map(item => ({
+                            name: item.dish.name,
+                            quantity: item.quantity,
+                            priceAtPurchase: item.priceAtPurchase
+                        }))
+                    },
+                    userName: savedOrder.user.name || session.user.name || 'Анонімний клієнт',
+                    userEmail: savedOrder.user.email || session.user.email,
+                };
 
-        if (xpGained > 0) {
-            await prisma.userRestaurantStats.upsert({
-                where: {
-                    // Унікальний ключ зі схеми
-                    userId_restaurantId: {
+                await pusher.trigger(channelName, eventName, pusherPayload);
+                console.log(`[Pusher] Сповіщення відправлено для ресторану ${restaurantId}`);
+            } catch (pusherError) {
+                // Логуємо помилку, але не блокуємо створення замовлення
+                console.error('[Pusher] Помилка при відправці сповіщення:', pusherError);
+                // Замовлення все одно створено успішно, тому продовжуємо
+            }
+        } else {
+            console.warn('[Pusher] Pusher не ініціалізовано. Сповіщення не відправлено.');
+        }
+
+        // 💡 --- 8. НОВА ЛОГІКА РІВНІВ КАТЕГОРІЙ (XP) ---
+        // Для кожної страви знаходимо головну категорію та додаємо XP
+        // Обгортаємо в try-catch, щоб помилки не блокували створення замовлення
+        try {
+            const categoryXpMap = new Map<number, number>(); // categoryId -> xp
+
+            for (const cartItem of cart) {
+                try {
+                    const dish = dishesFromDb.find(d => d.id === cartItem.dishId);
+                    if (!dish) {
+                        console.warn(`[Category Loyalty] Страва з ID ${cartItem.dishId} не знайдена`);
+                        continue;
+                    }
+
+                    // Знаходимо головну категорію (якщо страва в підкатегорії)
+                    let mainCategoryId = dish.category.id;
+                    
+                    if (dish.category.parentId !== null) {
+                        // Якщо є батьківська категорія, використовуємо її
+                        if (dish.category.parent) {
+                            mainCategoryId = dish.category.parent.id;
+                        } else {
+                            // Якщо parent не завантажено, завантажуємо його
+                            try {
+                                const categoryWithParent = await prisma.category.findUnique({
+                                    where: { id: dish.category.id },
+                                    include: {
+                                        parent: {
+                                            select: {
+                                                id: true,
+                                                parentId: true
+                                            }
+                                        }
+                                    }
+                                });
+                                if (categoryWithParent?.parent) {
+                                    mainCategoryId = categoryWithParent.parent.id;
+                                } else if (categoryWithParent?.parentId) {
+                                    mainCategoryId = categoryWithParent.parentId;
+                                }
+                            } catch (parentError: any) {
+                                console.error(`[Category Loyalty] Помилка при завантаженні parent для категорії ${dish.category.id}:`, parentError.message);
+                                // Використовуємо поточну категорію як головну
+                            }
+                        }
+                    }
+
+                    // Розраховуємо XP для цієї страви (1 грн = 1 XP)
+                    const itemXp = Math.floor(dish.price * cartItem.quantity);
+                    const currentXp = categoryXpMap.get(mainCategoryId) || 0;
+                    categoryXpMap.set(mainCategoryId, currentXp + itemXp);
+                    console.log(`[Category Loyalty] Страва ${dish.id} (категорія ${dish.category.id}, parentId: ${dish.category.parentId}) → головна категорія ${mainCategoryId}, XP: ${itemXp}`);
+                } catch (itemError: any) {
+                    console.error(`[Category Loyalty] Помилка при обробці страви ${cartItem.dishId}:`, itemError.message);
+                    // Продовжуємо з наступною стравою
+                }
+            }
+
+            // Оновлюємо XP для кожної категорії
+            console.log(`[Category Loyalty] Оновлюємо статистику для ${categoryXpMap.size} категорій`);
+            for (const [categoryId, xpGained] of categoryXpMap.entries()) {
+                try {
+                    // Перевіряємо, чи існує категорія
+                    const categoryExists = await prisma.category.findUnique({
+                        where: { id: categoryId }
+                    });
+                    
+                    if (!categoryExists) {
+                        console.error(`[Category Loyalty] Категорія ${categoryId} не існує, пропускаємо`);
+                        continue;
+                    }
+
+                    const result = await prisma.userCategoryStats.upsert({
+                        where: {
+                            userId_categoryId: {
+                                userId: userId,
+                                categoryId: categoryId,
+                            },
+                        },
+                        update: {
+                            xp: {
+                                increment: xpGained,
+                            },
+                        },
+                        create: {
+                            userId: userId,
+                            categoryId: categoryId,
+                            restaurantId: numericRestaurantId,
+                            xp: xpGained,
+                        },
+                    });
+                    console.log(`[Category Loyalty] ✅ Юзер ${userId} отримав ${xpGained} XP для категорії ${categoryId}. Поточний XP: ${result.xp}`);
+                } catch (categoryError: any) {
+                    console.error(`[Category Loyalty] ❌ Помилка при оновленні статистики категорії ${categoryId}:`, {
+                        code: categoryError.code,
+                        message: categoryError.message,
+                        meta: categoryError.meta
+                    });
+                    // Продовжуємо, навіть якщо є помилка з однією категорією
+                }
+            }
+
+            // Розраховуємо рівень закладу на основі середнього рівня категорій
+            try {
+                const categoryStats = await prisma.userCategoryStats.findMany({
+                    where: {
                         userId: userId,
                         restaurantId: numericRestaurantId,
                     },
-                },
-                update: {
-                    // Якщо запис існує, додаємо XP
-                    xp: {
-                        increment: xpGained,
+                });
+
+                if (categoryStats.length > 0) {
+                    const totalXp = categoryStats.reduce((sum, stat) => sum + stat.xp, 0);
+                    const averageXp = Math.floor(totalXp / categoryStats.length);
+                    
+                    await prisma.userRestaurantStats.upsert({
+                        where: {
+                            userId_restaurantId: {
+                                userId: userId,
+                                restaurantId: numericRestaurantId,
+                            },
+                        },
+                        update: {
+                            xp: averageXp,
+                        },
+                        create: {
+                            userId: userId,
+                            restaurantId: numericRestaurantId,
+                            xp: averageXp,
+                        },
+                    });
+                    console.log(`[Restaurant Loyalty] Рівень закладу оновлено до ${averageXp} XP (середнє з ${categoryStats.length} категорій)`);
+                }
+            } catch (restaurantLoyaltyError: any) {
+                console.error('[Restaurant Loyalty] Помилка при оновленні рівня закладу:', {
+                    code: restaurantLoyaltyError.code,
+                    message: restaurantLoyaltyError.message,
+                    meta: restaurantLoyaltyError.meta
+                });
+                // Продовжуємо, навіть якщо є помилка з оновленням рівня закладу
+            }
+        } catch (categoryLoyaltyError: any) {
+            // Якщо вся логіка категорій падає, логуємо помилку, але не блокуємо створення замовлення
+            console.error('[Category Loyalty] Критична помилка при обробці лояльності категорій:', {
+                message: categoryLoyaltyError.message,
+                stack: categoryLoyaltyError.stack
+            });
+        }
+
+        // Оновлюємо XP для кожної категорії
+        for (const [categoryId, xpGained] of categoryXpMap.entries()) {
+            try {
+                // Перевіряємо, чи існує категорія
+                const categoryExists = await prisma.category.findUnique({
+                    where: { id: categoryId }
+                });
+                
+                if (!categoryExists) {
+                    console.error(`[Category Loyalty] Категорія ${categoryId} не існує, пропускаємо`);
+                    continue;
+                }
+
+                await prisma.userCategoryStats.upsert({
+                    where: {
+                        userId_categoryId: {
+                            userId: userId,
+                            categoryId: categoryId,
+                        },
                     },
-                },
-                create: {
-                    // Якщо це перше замовлення, створюємо запис
+                    update: {
+                        xp: {
+                            increment: xpGained,
+                        },
+                    },
+                    create: {
+                        userId: userId,
+                        categoryId: categoryId,
+                        restaurantId: numericRestaurantId,
+                        xp: xpGained,
+                    },
+                });
+                console.log(`[Category Loyalty] Юзер ${userId} отримав ${xpGained} XP для категорії ${categoryId}`);
+            } catch (categoryError: any) {
+                console.error(`[Category Loyalty] Помилка при оновленні статистики категорії ${categoryId}:`, {
+                    code: categoryError.code,
+                    message: categoryError.message,
+                    meta: categoryError.meta
+                });
+                // Продовжуємо, навіть якщо є помилка з однією категорією
+            }
+        }
+
+        // Розраховуємо рівень закладу на основі середнього рівня категорій
+        try {
+            const categoryStats = await prisma.userCategoryStats.findMany({
+                where: {
                     userId: userId,
                     restaurantId: numericRestaurantId,
-                    xp: xpGained,
                 },
             });
-            console.log(`[Loyalty] Юзер ${userId} отримав ${xpGained} XP для ресторану ${numericRestaurantId}`);
+
+            if (categoryStats.length > 0) {
+                const totalXp = categoryStats.reduce((sum, stat) => sum + stat.xp, 0);
+                const averageXp = Math.floor(totalXp / categoryStats.length);
+                
+                await prisma.userRestaurantStats.upsert({
+                    where: {
+                        userId_restaurantId: {
+                            userId: userId,
+                            restaurantId: numericRestaurantId,
+                        },
+                    },
+                    update: {
+                        xp: averageXp,
+                    },
+                    create: {
+                        userId: userId,
+                        restaurantId: numericRestaurantId,
+                        xp: averageXp,
+                    },
+                });
+                console.log(`[Restaurant Loyalty] Рівень закладу оновлено до ${averageXp} XP (середнє з ${categoryStats.length} категорій)`);
+            }
+        } catch (restaurantLoyaltyError: any) {
+            console.error('[Restaurant Loyalty] Помилка при оновленні рівня закладу:', {
+                code: restaurantLoyaltyError.code,
+                message: restaurantLoyaltyError.message,
+                meta: restaurantLoyaltyError.meta
+            });
+            // Продовжуємо, навіть якщо є помилка з оновленням рівня закладу
         }
-        // --- КІНЕЦЬ ЛОГІКИ РІВНІВ ---
+        // --- КІНЕЦЬ ЛОГІКИ РІВНІВ КАТЕГОРІЙ ---
 
 
         // 💡 --- 9. ЛОГІКА АЧІВОК (залишається) ---

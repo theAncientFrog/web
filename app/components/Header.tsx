@@ -23,16 +23,16 @@ const Header: React.FC<HeaderProps> = ({
     const userImage = session?.user?.image;
 
     return (
-        <header className="bg-white border-b border-gray-100">
-            <div className="container mx-auto px-4 lg:px-6 py-6 flex justify-between items-center max-w-7xl">
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+            <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 flex justify-between items-center max-w-7xl">
 
-                {/* Ліва частина (без змін) */}
+                {/* Ліва частина */}
                 <Link href="/homepage" passHref legacyBehavior>
-                    <div className="flex flex-col cursor-pointer hover:opacity-90 transition-opacity">
-                        <h1 className="text-2xl font-bold text-green-600">
+                    <div className="flex flex-col cursor-pointer hover:opacity-90 transition-opacity min-w-0 flex-1">
+                        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 dark:text-green-400 truncate">
                             {breadcrumpText}
                         </h1>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
                             {description}
                         </p>
                     </div>
@@ -45,7 +45,7 @@ const Header: React.FC<HeaderProps> = ({
                     <button
                         onClick={onProfileClick}
                         // 💡 ОНОВЛЕННЯ: Додаємо z-10, щоб кнопка була гарантовано "зверху"
-                        className="relative z-10 text-gray-800 hover:text-green-600 transition-colors p-2 rounded-full hover:bg-gray-50"
+                        className="relative z-10 text-gray-800 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 transition-colors p-2 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700"
                         aria-label="Профіль користувача"
                     >
                         {userImage ? (

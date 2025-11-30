@@ -11,20 +11,35 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Settings, ArrowLeft, Utensils, Coffee, Wine, Package, User } from 'lucide-react';
 import ProfileModal from '../../components/ProfileModal';
+import Footer from '../../components/Footer';
 
-// --- ДАНІ ДЛЯ ВІДТВОРЕННЯ ДИЗАЙНУ ---
-const PRIMARY_CATEGORIES = [
-    { name: 'Кухня', icon: Utensils, link: 'Кухня' },
-    { name: 'Напої', icon: Coffee, link: 'Напої' },
-    { name: 'Алкоголь', icon: Wine, link: 'Алкогольні напої' },
-    { name: 'Мерч', icon: Package, link: 'Мерч' },
-];
-// ------------------------------------
+// Мапування іконок для категорій
+const CATEGORY_ICONS = {
+    'Їжа': Utensils,
+    'Кухня': Utensils,
+    'Напої': Coffee,
+    'Алкоголь': Wine,
+    'Мерч': Package,
+    'Алкогольні напої': Wine,
+    'Безалкогольні напої': Coffee,
+    'Кава': Coffee,
+    'Чай': Coffee,
+    'Випічка': Package,
+    'Десерти': Package,
+    'Снеки': Package,
+    // Додайте інші категорії за потребою
+};
+
+const getIconForCategory = (categoryName) => {
+    return CATEGORY_ICONS[categoryName] || Utensils; // Дефолтна іконка
+};
 
 export default function MenuPage() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [restaurant, setRestaurant] = useState(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
+    const [categories, setCategories] = useState([]);
+    const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
     // 💡 --- 1. ДОДАНО СТАН ДЛЯ РІВНІВ ---
     const [loyalty, setLoyalty] = useState({ level: 1, progress: 0 });
@@ -87,12 +102,38 @@ export default function MenuPage() {
     }, [restaurantId]);
     // --- КІНЕЦЬ ---
 
+    // 💡 --- 3. ДОДАНО ЛОГІКУ ЗАВАНТАЖЕННЯ КАТЕГОРІЙ ---
+    useEffect(() => {
+        if (restaurantId) {
+            setIsLoadingCategories(true);
+            fetch(`/api/categories?restaurantId=${restaurantId}`)
+                .then(res => res.json())
+                .then(data => {
+                    // Форматуємо категорії для відображення
+                    const formattedCategories = data.map(category => ({
+                        name: category.name,
+                        icon: getIconForCategory(category.name),
+                        link: category.name, // Використовуємо ім'я як посилання
+                    }));
+                    setCategories(formattedCategories);
+                })
+                .catch(error => {
+                    console.error('Failed to load categories:', error);
+                    setCategories([]);
+                })
+                .finally(() => {
+                    setIsLoadingCategories(false);
+                });
+        }
+    }, [restaurantId]);
+    // --- КІНЕЦЬ ---
+
 
     // Стан завантаження
-    if (status === "loading" || isLoadingData || isLoadingLoyalty) {
+    if (status === "loading" || isLoadingData || isLoadingLoyalty || isLoadingCategories) {
         return (
-            <main className="w-full min-h-screen flex flex-col bg-gray-50 justify-center items-center">
-                <div className="p-8 text-center text-gray-500">Завантаження меню...</div>
+            <main className="w-full min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 justify-center items-center">
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Завантаження меню...</div>
             </main>
         );
     }
@@ -107,7 +148,7 @@ export default function MenuPage() {
                 onClose={() => setIsProfileOpen(false)}
             />
 
-            <main className="w-full min-h-screen flex flex-col bg-gray-50 justify-start">
+            <main className="w-full min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 justify-start">
 
                 {/* --- 1. ХЕДЕР З ФОНОМ (BANNER) --- */}
                 <div className="w-full h-[clamp(200px,30vh,250px)] bg-gray-100 bg-cover bg-center relative flex-shrink-0">
@@ -142,11 +183,11 @@ export default function MenuPage() {
 
                 {/* --- 2. КАРТКА РЕСТОРАНУ --- */}
                 <div className="relative z-10 w-full max-w-[1600px] mx-auto">
-                    <div className="bg-white rounded-3xl shadow-lg p-5 mx-4 lg:mx-8 -mt-20 sm:-mt-16 z-10 text-left">
+                    <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-5 mx-4 lg:mx-8 -mt-20 sm:-mt-16 z-10 text-left">
 
                         <div className="flex items-center space-x-4">
                             {/* ЛОГОТИП */}
-                            <div className="w-16 h-16 sm:w-16 sm:h-16 rounded-full bg-gray-200 border-2 sm:border-4 border-white flex-shrink-0 flex items-center justify-center overflow-hidden">
+                            <div className="w-16 h-16 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-gray-700 border-2 sm:border-4 border-white dark:border-gray-800 flex-shrink-0 flex items-center justify-center overflow-hidden">
                                 <Image
                                     src={logoUrl || defaultPlaceholder}
                                     alt="Restaurant Logo"
@@ -157,52 +198,58 @@ export default function MenuPage() {
                             </div>
 
                             <div className="flex-grow overflow-hidden">
-                                <h2 className="text-2xl font-bold text-gray-900">{name || 'NAZVA'}</h2>
-                                <p className="mt-0.5 mb-1 text-yellow-500 text-sm">{restaurantRating}</p>
-                                <span className="text-sm text-gray-500 truncate block">{address || 'Адреса відсутня'}</span>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{name || 'NAZVA'}</h2>
+                                <p className="mt-0.5 mb-1 text-yellow-500 dark:text-yellow-400 text-sm">{restaurantRating}</p>
+                                <span className="text-sm text-gray-500 dark:text-gray-400 truncate block">{address || 'Адреса відсутня'}</span>
                             </div>
                             {/* 💡 --- 3. ОНОВЛЕНО РІВЕНЬ --- */}
-                            <span className="text-sm font-bold text-green-600 self-start whitespace-nowrap">
+                            <span className="text-sm font-bold text-green-600 dark:text-green-400 self-start whitespace-nowrap">
                                 lvl. {loyalty.level}
                             </span>
                         </div>
 
                         {/* Прогрес бар */}
-                        <div className="mt-4 border-t border-gray-100 pt-4">
-                            <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                                 {/* 💡 --- 4. ОНОВЛЕНО ПРОГРЕС-БАР --- */}
-                                <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${loyalty.progress}%` }}></div>
+                                <div className="bg-green-500 dark:bg-green-600 h-2.5 rounded-full" style={{ width: `${loyalty.progress}%` }}></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* --- 3. СПИСОК КАТЕГОРІЙ МЕНЮ (4 ОСНОВНІ КНОПКИ) --- */}
+                {/* --- 3. СПИСОК КАТЕГОРІЙ МЕНЮ (ДИНАМІЧНІ КНОПКИ) --- */}
                 <div className="w-full mx-auto max-w-[1600px] flex-grow flex flex-col pt-8 px-4 lg:px-8">
+                    {categories.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-4">
+                            {categories.map((category) => {
+                                const Icon = category.icon;
 
-                    <div className="grid grid-cols-2 gap-4">
-                        {PRIMARY_CATEGORIES.map((category) => {
-                            const Icon = category.icon;
+                                return (
+                                    <Link
+                                        key={category.name}
+                                        href={`/menu-secondary/${restaurantId}?category=${encodeURIComponent(category.link)}`}
+                                        className="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center shadow-sm hover:shadow-md dark:hover:shadow-lg transition-shadow duration-200 border border-gray-100 dark:border-gray-700"
+                                    >
+                                        <div className="bg-gray-100 dark:bg-gray-700 rounded-md p-2 flex-shrink-0">
+                                            <Icon className="w-6 h-6 text-green-700 dark:text-green-400" />
+                                        </div>
 
-                            return (
-                                <Link
-                                    key={category.name}
-                                    href={`/menu-secondary/${restaurantId}?id=${restaurantId}&category=${category.link}`}
-                                    className="bg-white rounded-lg p-4 flex items-center shadow-sm hover:shadow-md transition-shadow duration-200"
-                                >
-                                    <div className="bg-gray-100 rounded-md p-2 flex-shrink-0">
-                                        <Icon className="w-6 h-6 text-green-700" />
-                                    </div>
-
-                                    <span className="text-base font-semibold ml-3 text-gray-800">
-                                        {category.name}
-                                    </span>
-                                </Link>
-                            );
-                        })}
-                    </div>
+                                        <span className="text-base font-semibold ml-3 text-gray-800 dark:text-gray-200">
+                                            {category.name}
+                                        </span>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                            Категорії не знайдено
+                        </div>
+                    )}
                 </div>
             </main>
+            <Footer />
         </>
     );
 }

@@ -14,6 +14,7 @@ const HomePage= () => {
       <BreadcrumbHeader 
         breadcrumpText="Breadcrump"
         description="Смак починається з меню"
+        forceLightTheme={true}
       />
       
       <main className="container mx-auto px-4 py-8 max-w-7xl">
@@ -27,7 +28,7 @@ const HomePage= () => {
         
       </main>
 
-      <Footer />
+      <Footer forceLightTheme={true} />
     </div>
   );
 };

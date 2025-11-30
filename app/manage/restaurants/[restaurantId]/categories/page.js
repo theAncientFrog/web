@@ -6,13 +6,45 @@ import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AddCategoryModal from '../../../../components/AddCategoryModal';
-import { ChevronLeft, Plus, Settings, Trash2, User } from 'lucide-react';
+import EditCategoryModal from '../../../../components/EditCategoryModal';
+import { ChevronLeft, Plus, Settings, Trash2, User, 
+    Utensils, Coffee, Wine, Package, IceCream, Pizza, 
+    Apple, Fish, Beef, Salad, Cookie, Cake, Milk, 
+    Soup, Cherry 
+} from 'lucide-react';
 import Image from 'next/image'; // Необхідний для тега <Image>
+
+// Мапа іконок для категорій (має відповідати CATEGORY_ICONS в AddCategoryModal)
+const CATEGORY_ICONS_MAP = {
+    'Utensils': Utensils,
+    'Coffee': Coffee,
+    'Wine': Wine,
+    'Package': Package,
+    'IceCream': IceCream,
+    'Pizza': Pizza,
+    'Apple': Apple,
+    'Fish': Fish,
+    'Beef': Beef,
+    'Salad': Salad,
+    'Cookie': Cookie,
+    'Cake': Cake,
+    'Milk': Milk,
+    'Soup': Soup,
+    'Cherry': Cherry,
+};
+
+// Функція для отримання компонента іконки
+const getIconComponent = (iconName) => {
+    if (!iconName) return Utensils; // Дефолтна іконка
+    return CATEGORY_ICONS_MAP[iconName] || Utensils;
+};
 
 export default function ManageCategoriesPage() {
     const [categories, setCategories] = useState([]);
     const [restaurantName, setRestaurantName] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState(null);
     const { data: session, status } = useSession();
     const params = useParams();
     const router = useRouter();
@@ -54,6 +86,19 @@ export default function ManageCategoriesPage() {
         setCategories((prev) => [...prev, newCategory]);
     };
 
+    const handleCategoryUpdated = (updatedCategory) => {
+        setCategories((prev) => 
+            prev.map(cat => 
+                cat.id === updatedCategory.id ? updatedCategory : cat
+            )
+        );
+    };
+
+    const handleEditClick = (category) => {
+        setSelectedCategory(category);
+        setIsEditModalOpen(true);
+    };
+
     // TODO: Обробка видалення (аналогічно як у ManageItemsPage)
     // const handleDeleteCategory = () => { /* ... */ };
 
@@ -74,6 +119,17 @@ export default function ManageCategoriesPage() {
                 onClose={() => setIsModalOpen(false)}
                 onCategoryAdded={handleCategoryAdded}
                 restaurantId={restaurantId}
+                existingCategories={categories}
+            />
+            <EditCategoryModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedCategory(null);
+                }}
+                onCategoryUpdated={handleCategoryUpdated}
+                restaurantId={restaurantId}
+                category={selectedCategory}
             />
 
             {/* pageContainer + menuPageContainer */}
@@ -84,7 +140,7 @@ export default function ManageCategoriesPage() {
                     {/* manageHeader */}
                     <header className="flex justify-between items-center mb-8 pb-6 border-b border-gray-200 flex-wrap gap-4">
                         <div className="manageHeaderTitle">
-                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-600 uppercase">MANAGER MODE</h1>
+                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">MANAGER MODE</h1>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-700">
                            {/* profileIcon */}
@@ -119,40 +175,104 @@ export default function ManageCategoriesPage() {
                         </div>
 
                         {/* manageCategoryList */}
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-4">
                             {Array.isArray(categories) && categories.length > 0 ? (
-                                categories.map((category) => (
-                                    // manageCategoryCard
-                                    <div key={category.id} className="bg-white rounded-lg shadow-sm flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 border border-gray-100">
+                                // Фільтруємо тільки батьківські категорії (parentId === null)
+                                categories
+                                    .filter(category => category.parentId === null)
+                                    .map((parentCategory) => {
+                                        // Використовуємо підкатегорії з батьківської категорії (якщо є)
+                                        // Або знаходимо їх з загального масиву
+                                        const subcategories = parentCategory.subcategories || categories.filter(
+                                            cat => cat.parentId === parentCategory.id
+                                        );
                                         
-                                        {/* manageCategoryInfo */}
-                                        <div className="flex-grow text-left overflow-hidden">
-                                            <h3 className="m-0 mb-0.5 text-base sm:text-lg font-semibold truncate">{category.name}</h3>
-                                            <p className="m-0 mb-1 text-gray-500 text-sm truncate">{category.description || 'No description'}</p>
-                                            <span className="text-xs text-gray-400">{category.item_count || 0} items</span>
-                                        </div>
-                                        
-                                        {/* manageCategoryActions */}
-                                        <div className="flex items-center gap-3 flex-shrink-0 pt-3 border-t border-gray-100 sm:border-t-0 sm:pt-0">
-                                            
-                                            {/* Manage Items button */}
-                                            <Link
-                                                href={`/manage/restaurants/${restaurantId}/categories/${category.id}/items`}
-                                                className="bg-gray-100 text-indigo-600 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer no-underline whitespace-nowrap transition hover:bg-gray-200"
-                                            >
-                                                Manage Items
-                                            </Link>
+                                        return (
+                                            <div key={parentCategory.id} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                                                {/* Батьківська категорія */}
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 border-b border-gray-100">
+                                                    {/* manageCategoryInfo */}
+                                                    <div className="flex items-center gap-3 flex-grow text-left overflow-hidden">
+                                                        {/* Іконка категорії */}
+                                                        {(() => {
+                                                            const IconComponent = getIconComponent(parentCategory.iconName);
+                                                            return (
+                                                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                                                    <IconComponent size={20} className="text-gray-600 dark:text-gray-300" />
+                                                                </div>
+                                                            );
+                                                        })()}
+                                                        <div className="flex-grow min-w-0">
+                                                            <h3 className="m-0 mb-0.5 text-base sm:text-lg font-semibold truncate">{parentCategory.name}</h3>
+                                                            <p className="m-0 mb-1 text-gray-500 text-sm truncate">{parentCategory.description || 'No description'}</p>
+                                                            <span className="text-xs text-gray-400">
+                                                                {parentCategory.item_count || 0} items
+                                                                {subcategories.length > 0 && ` • ${subcategories.length} subcategories`}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* manageCategoryActions */}
+                                                    <div className="flex items-center gap-3 flex-shrink-0 pt-3 border-t border-gray-100 sm:border-t-0 sm:pt-0">
+                                                        {/* Редагування та Видалення - тільки для батьківських категорій */}
+                                                        <button 
+                                                            className="text-gray-500 transition hover:text-indigo-600"
+                                                            onClick={() => handleEditClick(parentCategory)}
+                                                            title="Редагувати категорію"
+                                                        >
+                                                            <Settings size={20} />
+                                                        </button>
+                                                        <button className="text-gray-500 transition hover:text-red-500">
+                                                            <Trash2 size={20} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Дочірні категорії */}
+                                                {subcategories.length > 0 && (
+                                                    <div className="bg-gray-50 border-t border-gray-100">
+                                                        <div className="px-4 py-2 border-b border-gray-200">
+                                                            <span className="text-xs font-semibold text-gray-500 uppercase">Subcategories</span>
+                                                        </div>
+                                                        <div className="flex flex-col divide-y divide-gray-200">
+                                                            {subcategories.map((subcategory) => (
+                                                                <div key={subcategory.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 hover:bg-gray-100 transition">
+                                                                    {/* manageCategoryInfo */}
+                                                                    <div className="flex-grow text-left overflow-hidden pl-4">
+                                                                        <h4 className="m-0 mb-0.5 text-sm sm:text-base font-medium truncate text-gray-700">{subcategory.name}</h4>
+                                                                        <p className="m-0 mb-1 text-gray-400 text-xs truncate">{subcategory.description || 'No description'}</p>
+                                                                        <span className="text-xs text-gray-400">{subcategory.item_count || 0} items</span>
+                                                                    </div>
+                                                                    
+                                                                    {/* manageCategoryActions */}
+                                                                    <div className="flex items-center gap-3 flex-shrink-0 pt-3 border-t border-gray-200 sm:border-t-0 sm:pt-0">
+                                                                        {/* Manage Items button - для дочірньої категорії */}
+                                                                        <Link
+                                                                            href={`/manage/restaurants/${restaurantId}/categories/${subcategory.id}/items`}
+                                                                            className="bg-gray-100 text-indigo-600 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer no-underline whitespace-nowrap transition hover:bg-gray-200"
+                                                                        >
+                                                                            Manage Items
+                                                                        </Link>
 
-                                            {/* Редагування та Видалення */}
-                                            <button className="text-gray-500 transition hover:text-indigo-600">
-                                                <Settings size={20} />
-                                            </button>
-                                            <button className="text-gray-500 transition hover:text-red-500">
-                                                <Trash2 size={20} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
+                                                                        {/* Редагування та Видалення */}
+                                                                        <button 
+                                                                            className="text-gray-500 transition hover:text-indigo-600"
+                                                                            onClick={() => handleEditClick(subcategory)}
+                                                                        >
+                                                                            <Settings size={20} />
+                                                                        </button>
+                                                                        <button className="text-gray-500 transition hover:text-red-500">
+                                                                            <Trash2 size={20} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })
                             ) : (
                                 // noDataText
                                 <p className="text-gray-500 text-center p-8">No categories added yet for this restaurant.</p>

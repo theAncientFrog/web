@@ -9,6 +9,17 @@
 /* 3. Утилітні класи Tailwind (для всіх класів: flex, p-4, bg-white тощо) */
 @tailwind utilities;
 
+/* Утиліта для приховування scrollbar на мобільних */
+@layer utilities {
+    .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE та Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;  /* Chrome, Safari та Opera */
+    }
+}
+
 /* Якщо у вас є будь-які власні стилі, які ви хочете зберегти,
    наприклад, стилі для HTML-тегів, ви можете додати їх тут: */
 /*
