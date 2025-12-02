@@ -5,14 +5,31 @@ import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth.config';
 import { getServerSession } from 'next-auth/next';
 
-// Ініціалізація Pusher
-const pusher = new Pusher({
-    appId: process.env.PUSHER_APP_ID!,
-    key: process.env.PUSHER_KEY!,
-    secret: process.env.PUSHER_SECRET!,
-    cluster: process.env.PUSHER_CLUSTER!,
-    useTLS: true,
-});
+// Леніва ініціалізація Pusher (тільки якщо змінні оточення налаштовані)
+let pusher: Pusher | null = null;
+
+function getPusher(): Pusher | null {
+    if (!pusher) {
+        if (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET && process.env.PUSHER_CLUSTER) {
+            try {
+                pusher = new Pusher({
+                    appId: process.env.PUSHER_APP_ID,
+                    key: process.env.PUSHER_KEY,
+                    secret: process.env.PUSHER_SECRET,
+                    cluster: process.env.PUSHER_CLUSTER,
+                    useTLS: true,
+                });
+            } catch (error) {
+                console.error('[Pusher] Помилка ініціалізації:', error);
+                return null;
+            }
+        } else {
+            console.warn('[Pusher] Змінні оточення не налаштовані. Pusher буде вимкнено.');
+            return null;
+        }
+    }
+    return pusher;
+}
 
 // ▼▼▼ Явне визначення допустимих статусів ▼▼▼
 type OrderStatus = 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
@@ -93,14 +110,22 @@ export async function PUT(
 
 
         // 6. Надсилання сповіщення клієнту (колишній крок 5)
-        const channelName = `user-${updatedOrder.userId}`;
-        const eventName = 'order-status-update';
+        const pusherInstance = getPusher();
+        if (pusherInstance) {
+            try {
+                const channelName = `user-${updatedOrder.userId}`;
+                const eventName = 'order-status-update';
 
-        await pusher.trigger(channelName, eventName, {
-            orderId: updatedOrder.id,
-            newStatus: updatedOrder.status,
-            message: `Ваше замовлення #${updatedOrder.id} було ${statusMap[newStatus]}`,
-        });
+                await pusherInstance.trigger(channelName, eventName, {
+                    orderId: updatedOrder.id,
+                    newStatus: updatedOrder.status,
+                    message: `Ваше замовлення #${updatedOrder.id} було ${statusMap[newStatus]}`,
+                });
+            } catch (pusherError) {
+                console.error('[Pusher] Помилка при відправці сповіщення:', pusherError);
+                // Продовжуємо, навіть якщо Pusher не працює
+            }
+        }
 
         return NextResponse.json({ success: true, order: updatedOrder });
     } catch (error) {

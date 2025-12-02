@@ -1,14 +1,38 @@
-import { Resend } from 'resend';
-
-// Ініціалізуємо клієнт Resend з вашим API-ключем
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // 💡 --- ВИПРАВЛЕННЯ ---
 // Ви НЕ МОЖЕТЕ надсилати пошту з @gmail.com.
 // Використовуйте 'onboarding@resend.dev' доки ви не верифікуєте
 // свій власний домен (наприклад, @nazva.com) в налаштуваннях Resend.
 const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 // --- КІНЕЦЬ ВИПРАВЛЕННЯ ---
+
+// Леніва ініціалізація Resend - використовуємо динамічний імпорт
+// щоб уникнути проблем під час build
+let resendInstance: any = null;
+
+async function getResend(): Promise<any | null> {
+    // Перевіряємо, чи не під час build
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+        return null;
+    }
+    
+    if (!process.env.RESEND_API_KEY) {
+        console.warn('[EmailService] RESEND_API_KEY не встановлено. Email не буде надіслано.');
+        return null;
+    }
+    
+    if (!resendInstance) {
+        try {
+            // Динамічний імпорт Resend тільки коли потрібно
+            const { Resend } = await import('resend');
+            resendInstance = new Resend(process.env.RESEND_API_KEY);
+        } catch (error) {
+            console.error('[EmailService] Помилка імпорту Resend:', error);
+            return null;
+        }
+    }
+    
+    return resendInstance;
+}
 
 
 /**
@@ -17,6 +41,13 @@ const fromEmail = process.env.FROM_EMAIL || 'onboarding@resend.dev';
  * @param code - 6-значний код.
  */
 export async function sendVerificationEmail(email: string, code: string) {
+    const resend = await getResend();
+    
+    if (!resend) {
+        console.warn(`[EmailService] Пропущено надсилання email до ${email} - RESEND_API_KEY не налаштовано або під час build`);
+        return;
+    }
+    
     try {
         await resend.emails.send({
             from: `NAZVA <${fromEmail}>`, // Тепер тут буде 'onboarding@resend.dev'
