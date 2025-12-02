@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-// ❗️ ВИПРАВЛЕНО: Шлях до authOptions, ймовірно, веде до 'lib', а не до '[...nextauth]'
-import { authOptions } from '../../../../../../lib/auth.config';
+import { authOptions } from '@/lib/auth.config';
 import { prisma } from '@/lib/prisma';
 
 // --- GET: Отримати категорії для конкретного ресторану ---

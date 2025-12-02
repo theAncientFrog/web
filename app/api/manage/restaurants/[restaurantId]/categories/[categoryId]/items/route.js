@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-// 💡 ВИПРАВЛЕНО: Шлях до auth.config (7 рівнів)
-import { authOptions } from '../../../../../../../../lib/auth.config';
+import { authOptions } from '@/lib/auth.config';
 // 💡 ВИПРАВЛЕНО: Використання @/ для prisma
 import { prisma } from '@/lib/prisma';
 

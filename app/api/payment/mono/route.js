@@ -1,7 +1,7 @@
 // app/api/payment/mono/route.js
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth.config';
 // Переконайтесь, що у вас є цей файл і він працює
 // import prisma from '../../../../lib/prisma';
 
