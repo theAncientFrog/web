@@ -1,4 +1,4 @@
-import prisma from './prisma';
+import { prisma } from './prisma';
 
 /**
  * Допоміжна функція для видачі ачівки

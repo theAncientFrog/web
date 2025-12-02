@@ -1,11 +1,9 @@
 // app/api/manage/restaurants/[restaurantId]/stats/route.ts
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 // 💡 1. ВИПРАВЛЕНО ІМПОРТ: Переконайтеся, що шлях до auth.config.ts правильний
 import { authOptions } from '@/lib/auth.config';
-
-const prisma = new PrismaClient();
 
 export async function GET(
     req: Request,
