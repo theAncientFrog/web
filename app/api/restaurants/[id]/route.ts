@@ -1,7 +1,7 @@
 // app/api/restaurants/[id]/route.ts
 import { NextResponse } from 'next/server';
 // 💡 Використовуємо псевдонім '@', який вказує на 'app'
-import prisma from '@/lib/prisma'; 
+import { prisma } from '@/lib/prisma';
 
 type RouteParams = {
     params: {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../../../../../lib/auth.config';
-import prisma from '../../../../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // --- PUT: Оновити категорію ---
 export async function PUT(request, { params }) {

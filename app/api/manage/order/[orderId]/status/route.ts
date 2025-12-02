@@ -1,7 +1,7 @@
 // app/api/manage/order/[orderId]/status/route.ts
 import { NextResponse } from 'next/server';
 import Pusher from 'pusher';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth.config';
 import { getServerSession } from 'next-auth/next';
 

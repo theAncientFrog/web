@@ -1,6 +1,6 @@
 // app/api/profile/summary/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 
@@ -16,23 +16,23 @@ export async function GET() {
     }
 
     try {
-        const [achievementsCount, visitedCount, totalOrdersCount] = await prisma.$transaction([
+        const [achievementsCount, uniqueRestaurants, totalOrdersCount] = await prisma.$transaction([
 
             // Запит 1: Рахуємо ачівки
             prisma.userAchievement.count({
                 where: { userId: userId }
             }),
 
-            // Запит 2: Рахуємо унікальні візити
-            prisma.order.count({
+            // Запит 2: Рахуємо унікальні візити (отримуємо унікальні restaurantId)
+            prisma.order.findMany({
                 where: {
                     userId: userId,
-                    // 💡 ВИПРАВЛЕНО: Використовуємо { equals: ... }
-                    status: {
-                        equals: 'COMPLETED'
-                    }
+                    status: 'COMPLETED'
                 },
-                distinct: ['restaurantId'] // Рахуємо тільки унікальні ID
+                select: {
+                    restaurantId: true
+                },
+                distinct: ['restaurantId']
             }),
 
             // Запит 3: Загальна кількість замовлень
@@ -40,6 +40,8 @@ export async function GET() {
                 where: { userId: userId }
             })
         ]);
+
+        const visitedCount = uniqueRestaurants.length;
 
         return NextResponse.json({
             achievementsCount: achievementsCount,

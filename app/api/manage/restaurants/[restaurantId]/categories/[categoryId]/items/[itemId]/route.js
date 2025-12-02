@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 // 💡 ВИПРАВЛЕНО: Використання @/
 import { authOptions } from '@/lib/auth.config';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // --- Функція для перевірки доступу власника до товару ---
 async function verifyOwnerAccess(session, restaurantId, categoryId, itemId) {

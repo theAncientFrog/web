@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 // 💡 ВИПРАВЛЕНО: Шлях до auth.config (7 рівнів)
 import { authOptions } from '../../../../../../../../lib/auth.config';
 // 💡 ВИПРАВЛЕНО: Використання @/ для prisma
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // --- GET: Отримати товари для конкретної категорії ---
 export async function GET(request, { params }) {

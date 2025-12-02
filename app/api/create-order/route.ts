@@ -4,7 +4,7 @@
 
 import { NextResponse } from 'next/server';
 import Pusher from 'pusher';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
@@ -307,7 +307,7 @@ export async function POST(request: Request) {
 
             // Оновлюємо XP для кожної категорії
             console.log(`[Category Loyalty] Оновлюємо статистику для ${categoryXpMap.size} категорій`);
-            for (const [categoryId, xpGained] of categoryXpMap.entries()) {
+            for (const [categoryId, xpGained] of Array.from(categoryXpMap.entries())) {
                 try {
                     // Перевіряємо, чи існує категорія
                     const categoryExists = await prisma.category.findUnique({
@@ -394,89 +394,6 @@ export async function POST(request: Request) {
                 message: categoryLoyaltyError.message,
                 stack: categoryLoyaltyError.stack
             });
-        }
-
-        // Оновлюємо XP для кожної категорії
-        for (const [categoryId, xpGained] of categoryXpMap.entries()) {
-            try {
-                // Перевіряємо, чи існує категорія
-                const categoryExists = await prisma.category.findUnique({
-                    where: { id: categoryId }
-                });
-                
-                if (!categoryExists) {
-                    console.error(`[Category Loyalty] Категорія ${categoryId} не існує, пропускаємо`);
-                    continue;
-                }
-
-                await prisma.userCategoryStats.upsert({
-                    where: {
-                        userId_categoryId: {
-                            userId: userId,
-                            categoryId: categoryId,
-                        },
-                    },
-                    update: {
-                        xp: {
-                            increment: xpGained,
-                        },
-                    },
-                    create: {
-                        userId: userId,
-                        categoryId: categoryId,
-                        restaurantId: numericRestaurantId,
-                        xp: xpGained,
-                    },
-                });
-                console.log(`[Category Loyalty] Юзер ${userId} отримав ${xpGained} XP для категорії ${categoryId}`);
-            } catch (categoryError: any) {
-                console.error(`[Category Loyalty] Помилка при оновленні статистики категорії ${categoryId}:`, {
-                    code: categoryError.code,
-                    message: categoryError.message,
-                    meta: categoryError.meta
-                });
-                // Продовжуємо, навіть якщо є помилка з однією категорією
-            }
-        }
-
-        // Розраховуємо рівень закладу на основі середнього рівня категорій
-        try {
-            const categoryStats = await prisma.userCategoryStats.findMany({
-                where: {
-                    userId: userId,
-                    restaurantId: numericRestaurantId,
-                },
-            });
-
-            if (categoryStats.length > 0) {
-                const totalXp = categoryStats.reduce((sum, stat) => sum + stat.xp, 0);
-                const averageXp = Math.floor(totalXp / categoryStats.length);
-                
-                await prisma.userRestaurantStats.upsert({
-                    where: {
-                        userId_restaurantId: {
-                            userId: userId,
-                            restaurantId: numericRestaurantId,
-                        },
-                    },
-                    update: {
-                        xp: averageXp,
-                    },
-                    create: {
-                        userId: userId,
-                        restaurantId: numericRestaurantId,
-                        xp: averageXp,
-                    },
-                });
-                console.log(`[Restaurant Loyalty] Рівень закладу оновлено до ${averageXp} XP (середнє з ${categoryStats.length} категорій)`);
-            }
-        } catch (restaurantLoyaltyError: any) {
-            console.error('[Restaurant Loyalty] Помилка при оновленні рівня закладу:', {
-                code: restaurantLoyaltyError.code,
-                message: restaurantLoyaltyError.message,
-                meta: restaurantLoyaltyError.meta
-            });
-            // Продовжуємо, навіть якщо є помилка з оновленням рівня закладу
         }
         // --- КІНЕЦЬ ЛОГІКИ РІВНІВ КАТЕГОРІЙ ---
 

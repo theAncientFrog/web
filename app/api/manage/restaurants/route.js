@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config'; 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // 💡 ПРИМІТКА: Ми видалили помилковий TypeScript-код (type RouteParams = ...)
 // бо це .js файл. Ми використовуємо JSDoc для типів.

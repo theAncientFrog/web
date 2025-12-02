@@ -1,6 +1,6 @@
 // app/api/auth/login/route.js
 import { NextResponse } from 'next/server';
-import prisma from '../../../../lib/prisma';
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs'; // Ми використовували bcrypt для реєстрації
 
 

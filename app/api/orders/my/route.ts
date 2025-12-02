@@ -1,6 +1,6 @@
 // app/api/orders/my/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 
@@ -9,7 +9,7 @@ import { authOptions } from '@/lib/auth.config';
 // Тип для елемента 'items', який повертає select
 type ItemFromDB = {
     quantity: number;
-    priceAtPurchase: number;
+    priceAtPurchase: number | null;
     dish: { name: string };
 };
 
@@ -68,7 +68,7 @@ export async function GET() {
             items: order.items.map((item: ItemFromDB) => ({
                 name: item.dish.name,
                 quantity: item.quantity,
-                price: item.priceAtPurchase
+                price: item.priceAtPurchase ?? 0 // Обробляємо null значення
             })),
         }));
         // ▲▲▲ ▲▲▲ ▲▲▲
