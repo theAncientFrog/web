@@ -5,6 +5,9 @@ import { getServerSession } from 'next-auth/next';
 // 💡 1. ВИПРАВЛЕНО ІМПОРТ: Переконайтеся, що шлях до auth.config.ts правильний
 import { authOptions } from '@/lib/auth.config';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     req: Request,
     { params }: { params: { restaurantId: string } }

@@ -6,6 +6,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 import { calculateLevel } from '@/lib/levelingService';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     request: Request,
     { params }: { params: { restaurantId: string } }

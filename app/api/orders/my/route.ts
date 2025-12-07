@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // ▼▼▼ ВИПРАВЛЕННЯ: Явно визначаємо типи, які повертає Prisma ▼▼▼
 
 // Тип для елемента 'items', який повертає select

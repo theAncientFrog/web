@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth.config';
 import { prisma } from '@/lib/prisma';
 import QRCode from 'qrcode';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // GET - отримати всі столики ресторану
 export async function GET(
     request: Request,

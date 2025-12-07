@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 // 💡 Використовуємо псевдонім '@', який вказує на 'app'
 import { prisma } from '@/lib/prisma';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 type RouteParams = {
     params: {
         id: string; 

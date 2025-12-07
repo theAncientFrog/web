@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { sendVerificationEmail } from '@/lib/emailService';
 import { Role } from '@prisma/client'; // Імпортуємо Role
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
     try {
         const { name, email, password } = await request.json();

@@ -5,6 +5,9 @@ import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth.config';
 import { getServerSession } from 'next-auth/next';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // Леніва ініціалізація Pusher (тільки якщо змінні оточення налаштовані)
 let pusher: Pusher | null = null;
 

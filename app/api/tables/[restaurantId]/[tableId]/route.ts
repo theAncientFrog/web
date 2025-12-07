@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth.config';
 import { prisma } from '@/lib/prisma';
 import QRCode from 'qrcode';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // DELETE - видалити столик
 export async function DELETE(
     request: Request,

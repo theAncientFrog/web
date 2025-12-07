@@ -4,6 +4,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config'; 
 import { prisma } from '@/lib/prisma';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // 💡 ПРИМІТКА: Ми видалили помилковий TypeScript-код (type RouteParams = ...)
 // бо це .js файл. Ми використовуємо JSDoc для типів.
 

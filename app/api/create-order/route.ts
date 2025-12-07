@@ -10,6 +10,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 import { checkAndAwardAchievements } from '@/lib/achievementService'; // 💡 1. Імпорт Ачівок
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // Ініціалізація Pusher (тільки якщо змінні оточення налаштовані)
 let pusher: Pusher | null = null;
 try {

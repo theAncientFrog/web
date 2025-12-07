@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useCart } from '@/context/CartContext';
@@ -21,7 +21,7 @@ import MyOrdersModal from '../../components/MyOrdersModal';
 import Footer from '../../components/Footer';
 import MenuItem from '../../components/MenuItem';
 
-export default function MenuSecondaryPage() {
+function MenuSecondaryContent() {
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -656,5 +656,17 @@ export default function MenuSecondaryPage() {
                 <Footer />
             </div>
         </>
+    );
+}
+
+export default function MenuSecondaryPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
+                <div className="text-gray-500 dark:text-gray-400">Завантаження...</div>
+            </div>
+        }>
+            <MenuSecondaryContent />
+        </Suspense>
     );
 }

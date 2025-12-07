@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 import { prisma } from '@/lib/prisma';
 
+// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
+export const dynamic = 'force-dynamic';
+
 // --- GET: Отримати категорії для конкретного ресторану ---
 export async function GET(request, { params }) {
     const session = await getServerSession(authOptions);

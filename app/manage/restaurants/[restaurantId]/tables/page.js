@@ -132,7 +132,7 @@ export default function ManageTablesPage() {
     };
 
     const downloadQRCode = (table) => {
-        if (!table.qrCodeUrl) return;
+        if (!table.qrCodeUrl || typeof window === 'undefined') return;
         
         const link = document.createElement('a');
         link.href = table.qrCodeUrl;
