@@ -23,6 +23,7 @@ type Order = {
     userName: string;
     items: ItemDetails[];
     status: 'PENDING' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+    tableNumber?: string | null; // 💡 Номер столика
 };
 
 // 💡 1. Тип даних, що надходять з API (при завантаженні історії)
@@ -32,6 +33,7 @@ type ApiOrderResponse = {
     createdAt: string;
     totalPrice: number;
     status: Order['status'];
+    tableNumber?: string | null; // 💡 Номер столика
     user: {
         name: string | null;
     };
@@ -52,6 +54,7 @@ type NewOrderPusherPayload = {
         totalPrice: number;
         status: 'PENDING';
         createdAt: string;
+        tableNumber?: string | null; // 💡 Номер столика
         items: {
             name: string;
             quantity: number;
@@ -132,6 +135,7 @@ export default function RestaurantDashboard() {
                     createdAt: order.createdAt,
                     totalPrice: order.totalPrice,
                     status: order.status,
+                    tableNumber: order.tableNumber || null, // 💡 Номер столика
                     // Мапимо вкладені дані
                     userName: order.user?.name || 'Клієнт', // ⬅️ з order.user.name
                     items: order.items.map(item => ({     // ⬅️ з order.items
@@ -170,6 +174,7 @@ export default function RestaurantDashboard() {
                 createdAt: data.order.createdAt,
                 totalPrice: data.order.totalPrice,
                 status: data.order.status, // Це 'PENDING'
+                tableNumber: data.order.tableNumber || null, // 💡 Номер столика
                 userName: data.userName,   // ⬅️ з data.userName
                 items: data.order.items.map(item => ({ // ⬅️ з data.order.items
                     name: item.name,
@@ -287,6 +292,7 @@ export default function RestaurantDashboard() {
                     createdAt: order.createdAt,
                     totalPrice: order.totalPrice,
                     status: order.status as Order['status'],
+                    tableNumber: order.tableNumber || null, // 💡 Номер столика
                     userName: order.user?.name || 'Клієнт',
                     items: order.items.map(item => ({
                         name: item.dish.name,
@@ -315,11 +321,11 @@ export default function RestaurantDashboard() {
             </header>
 
             {/* Список замовлень */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
                 {orders.length > 0 ? (
                     orders.map((order) => (
                         // Картка замовлення
-                        <div key={order.id} className={`bg-white rounded-xl shadow-lg border flex flex-col justify-between p-4 sm:p-6 ${order.status === 'PENDING' ? 'border-red-200' : 'border-gray-100'}`}>
+                        <div key={order.id} className={`bg-white rounded-xl shadow-lg border flex flex-col p-4 sm:p-5 ${order.status === 'PENDING' ? 'border-red-200' : 'border-gray-100'}`}>
 
                             {/* Хедер картки */}
                             <div className="mb-3 sm:mb-4">
@@ -329,6 +335,9 @@ export default function RestaurantDashboard() {
                                 </div>
                                 <h3 className="text-lg sm:text-xl font-bold mb-1">Замовлення #{order.id}</h3>
                                 <p className="text-xs sm:text-sm text-gray-600 truncate">Клієнт: {order.userName}</p>
+                                {order.tableNumber && (
+                                    <p className="text-xs sm:text-sm text-indigo-600 font-medium mt-1">Столик: {order.tableNumber}</p>
+                                )}
                                 <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleTimeString('uk-UA')}</p>
                             </div>
 
@@ -345,24 +354,26 @@ export default function RestaurantDashboard() {
                             </div>
 
                             {/* Футер картки */}
-                            <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
-                                <span className="text-base sm:text-lg font-extrabold text-indigo-600">
-                                  Всього: {order.totalPrice.toFixed(2)} грн
-                                </span>
+                            <div className="mt-3 sm:mt-4 space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-base font-extrabold text-indigo-600">
+                                      Всього: {order.totalPrice.toFixed(2)} грн
+                                    </span>
+                                </div>
 
                                 {/* Кнопки дій */}
-                                <div className="flex gap-2 w-full sm:w-auto">
+                                <div className="flex gap-2 w-full">
                                     {order.status === 'PENDING' && (
                                         <>
                                             <button
                                                 onClick={() => handleStatusChange(order.id, 'PENDING')}
-                                                className="flex-1 sm:flex-none bg-green-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-green-600 transition shadow-sm"
+                                                className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-green-600 transition shadow-sm"
                                             >
                                                 Прийняти
                                             </button>
                                             <button
                                                 onClick={() => handleCancelOrder(order.id)}
-                                                className="flex-1 sm:flex-none bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-red-600 transition shadow-sm"
+                                                className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition shadow-sm"
                                             >
                                                 Скасувати
                                             </button>
@@ -372,13 +383,13 @@ export default function RestaurantDashboard() {
                                         <>
                                             <button
                                                 onClick={() => handleStatusChange(order.id, 'PREPARING')}
-                                                className="flex-1 sm:flex-none bg-indigo-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-indigo-600 transition shadow-sm"
+                                                className="flex-1 bg-indigo-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-600 transition shadow-sm"
                                             >
                                                 Готово
                                             </button>
                                             <button
                                                 onClick={() => handleCancelOrder(order.id)}
-                                                className="flex-1 sm:flex-none bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-red-600 transition shadow-sm"
+                                                className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition shadow-sm"
                                             >
                                                 Скасувати
                                             </button>
@@ -388,13 +399,13 @@ export default function RestaurantDashboard() {
                                         <>
                                             <button
                                                 onClick={() => handleStatusChange(order.id, 'READY')}
-                                                className="flex-1 sm:flex-none bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer hover:bg-gray-500 transition shadow-sm"
+                                                className="flex-1 bg-gray-400 text-white px-3 py-2 rounded-lg text-sm font-semibold cursor-pointer hover:bg-gray-500 transition shadow-sm"
                                             >
                                                 Видати
                                             </button>
                                             <button
                                                 onClick={() => handleCancelOrder(order.id)}
-                                                className="flex-1 sm:flex-none bg-red-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold hover:bg-red-600 transition shadow-sm"
+                                                className="flex-1 bg-red-500 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-600 transition shadow-sm"
                                             >
                                                 Скасувати
                                             </button>

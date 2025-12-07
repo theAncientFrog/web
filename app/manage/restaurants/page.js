@@ -172,6 +172,12 @@ export default function ManageRestaurantsPage() {
                                             >
                                                 MANAGE MENU
                                             </Link>
+                                            <Link
+                                                href={`/manage/restaurants/${restaurant.id}/tables`}
+                                                className="bg-gray-100 text-indigo-600 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer no-underline whitespace-nowrap transition hover:bg-gray-200"
+                                            >
+                                                MANAGE TABLES
+                                            </Link>
                                         </div>
                                     </div>
                                 ))

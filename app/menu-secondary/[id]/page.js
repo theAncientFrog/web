@@ -45,6 +45,14 @@ export default function MenuSecondaryPage() {
     const categoryRefs = useRef({});
     const restaurantId = params.id;
     const currentCategory = searchParams.get('category');
+    const tableNumber = searchParams.get('table'); // Номер столика з URL
+    
+    // Діагностика: логування tableNumber
+    useEffect(() => {
+        if (tableNumber) {
+            console.log('[Menu] tableNumber з URL:', tableNumber);
+        }
+    }, [tableNumber]);
 
     const userName = session?.user?.name || 'Клієнт';
     const profileInitial = userName.charAt(0);
@@ -84,7 +92,9 @@ export default function MenuSecondaryPage() {
                         setSelectedMainCategory(firstMainCat.name);
                         if (firstMainCat.subcategories && firstMainCat.subcategories.length > 0) {
                             const firstSubCat = firstMainCat.subcategories[0];
-                            router.replace(`/menu-secondary/${restaurantId}?category=${encodeURIComponent(firstSubCat.name)}`, { scroll: false });
+                            // Зберігаємо параметр table при навігації
+                            const tableParam = searchParams.get('table') ? `&table=${encodeURIComponent(searchParams.get('table'))}` : '';
+                            router.replace(`/menu-secondary/${restaurantId}?category=${encodeURIComponent(firstSubCat.name)}${tableParam}`, { scroll: false });
                         }
                     }
                 })
@@ -222,8 +232,9 @@ export default function MenuSecondaryPage() {
         const element = categoryRefs.current[categoryId];
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Оновлюємо URL без перезавантаження
-            router.replace(`/menu-secondary/${restaurantId}?category=${encodeURIComponent(categoryName)}`, { scroll: false });
+            // Оновлюємо URL без перезавантаження, зберігаючи параметр table
+            const tableParam = tableNumber ? `&table=${encodeURIComponent(tableNumber)}` : '';
+            router.replace(`/menu-secondary/${restaurantId}?category=${encodeURIComponent(categoryName)}${tableParam}`, { scroll: false });
         }
     };
 
@@ -316,7 +327,8 @@ export default function MenuSecondaryPage() {
                         loadCategoryLevels();
                     }, 1000);
                 }} 
-                restaurantId={restaurantId} 
+                restaurantId={restaurantId}
+                tableNumber={tableNumber || null}
             />
             <MyOrdersModal isOpen={isOrdersOpen} onClose={() => setIsOrdersOpen(false)} restaurantId={restaurantId} />
 

@@ -61,8 +61,11 @@ export async function POST(request: Request) {
         const userId = Number(session.user.id);
 
         // 2. ОТРИМАННЯ ДАНИХ З ТІЛА ЗАПИТУ
-        const body: { cart: CartItem[]; restaurantId: string } = await request.json();
-        const { cart, restaurantId } = body;
+        const body: { cart: CartItem[]; restaurantId: string; tableNumber?: string | null } = await request.json();
+        const { cart, restaurantId, tableNumber } = body;
+        
+        // Логування для діагностики
+        console.log('[Order] tableNumber отримано:', tableNumber);
 
         // 3. ВАЛІДАЦІЯ ВХІДНИХ ДАНИХ
         if (!cart || cart.length === 0) {
@@ -171,6 +174,8 @@ export async function POST(request: Request) {
                     restaurantId: numericRestaurantId,
                     totalPrice: totalPrice,
                     status: 'PENDING', // 💡 Статус замовлення
+                    // @ts-ignore - tableNumber додано в схему Prisma, TypeScript може не бачити оновлений тип після регенерації
+                    tableNumber: tableNumber || null, // 💡 Номер столика (якщо є)
                     items: {
                         create: itemsToCreate,
                     }
@@ -185,6 +190,7 @@ export async function POST(request: Request) {
                 }
             });
             console.log('[Order] ✅ Замовлення успішно створено:', savedOrder.id);
+            console.log('[Order] tableNumber збережено:', (savedOrder as any).tableNumber);
         } catch (prismaError: any) {
             console.error('[Order] ❌ Помилка Prisma при створенні замовлення:', {
                 code: prismaError.code,
@@ -226,14 +232,15 @@ export async function POST(request: Request) {
                         totalPrice: savedOrder.totalPrice,
                         status: savedOrder.status,
                         createdAt: savedOrder.createdAt,
-                        items: savedOrder.items.map(item => ({
+                        tableNumber: (savedOrder as any).tableNumber || null, // 💡 Додаємо номер столика
+                        items: (savedOrder as any).items.map((item: any) => ({
                             name: item.dish.name,
                             quantity: item.quantity,
                             priceAtPurchase: item.priceAtPurchase
                         }))
                     },
-                    userName: savedOrder.user.name || session.user.name || 'Анонімний клієнт',
-                    userEmail: savedOrder.user.email || session.user.email,
+                    userName: (savedOrder as any).user?.name || session.user.name || 'Анонімний клієнт',
+                    userEmail: (savedOrder as any).user?.email || session.user.email,
                 };
 
                 await pusher.trigger(channelName, eventName, pusherPayload);

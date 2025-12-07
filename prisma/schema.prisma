@@ -122,6 +122,7 @@ model Restaurant {
   owner               User                  @relation(fields: [ownerId], references: [id])
   categories          Category[]
   orders              Order[]
+  tables              Table[]
   userRestaurantStats UserRestaurantStats[]
   userCategoryStats   UserCategoryStats[]
 }
@@ -160,6 +161,7 @@ model Order {
   status       String      @default("PENDING")
   userId       Int
   restaurantId Int
+  tableNumber  String?     // Номер столика (опціонально, бо не всі замовлення зі столика)
   user         User        @relation(fields: [userId], references: [id])
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   items        OrderItem[]
@@ -204,4 +206,16 @@ model EmailVerificationCode {
   expiresAt DateTime
 
   @@index([email])
+}
+
+model Table {
+  id           Int        @id @default(autoincrement())
+  number       String     // Номер столика (може бути будь-який формат: "1", "A1", "VIP-1" тощо)
+  qrCodeUrl    String?    // URL QR коду (генерується на сервері)
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([restaurantId, number]) // Унікальний номер столика в межах ресторану
 }

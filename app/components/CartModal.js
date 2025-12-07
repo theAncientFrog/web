@@ -6,8 +6,8 @@ import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
 import { X, Trash2, Minus, Plus } from 'lucide-react';
 
-// 💡 1. Компонент тепер приймає "restaurantId" як пропс
-export default function CartModal({ isOpen, onClose, restaurantId }) {
+// 💡 1. Компонент тепер приймає "restaurantId" та "tableNumber" як пропси
+export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }) {
     const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart(); 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -33,15 +33,19 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
             return;
         }
 
+        // Діагностика: логування tableNumber перед відправкою
+        console.log('[CartModal] Відправка замовлення з tableNumber:', tableNumber);
+
         try {
             const res = await fetch('/api/create-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 
-                // 💡 3. ГОЛОВНА ЗМІНА: Додаємо restaurantId в тіло запиту
+                // 💡 3. ГОЛОВНА ЗМІНА: Додаємо restaurantId та tableNumber в тіло запиту
                 body: JSON.stringify({ 
                     cart: itemsForApi,
-                    restaurantId: restaurantId // ⬅️ Ось воно!
+                    restaurantId: restaurantId, // ⬅️ Ось воно!
+                    tableNumber: tableNumber && tableNumber.trim() !== '' ? tableNumber.trim() : null // ⬅️ Номер столика (якщо є)
                 }),
             });
 
@@ -86,9 +90,16 @@ export default function CartModal({ isOpen, onClose, restaurantId }) {
                 </button>
                 
                 {/* modalTitle */}
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white p-4 sm:p-6 pb-0">
-                    Ваш Кошик
-                </h2>
+                <div className="p-4 sm:p-6 pb-0">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                        Ваш Кошик
+                    </h2>
+                    {tableNumber && tableNumber.trim() !== '' && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            Столик {tableNumber}
+                        </p>
+                    )}
+                </div>
 
                 {/* cartModalContent */}
                 <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
