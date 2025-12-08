@@ -24,12 +24,12 @@ const HeaderManager: React.FC = () => {
     <header className="bg-white border-b border-gray-100">
       <div className="container mx-auto px-4 lg:px-6 py-6 flex justify-between items-center">
         
-        {/* ЛІВА ЧАСТИНА: MANAGER MODE */}
+        {/* ЛІВА ЧАСТИНА: Breadcrumb */}
         {/* Посилаємося на головний дашборд менеджера */}
         <Link href="/manager/dashboard" passHref legacyBehavior> 
             <div className="cursor-pointer hover:opacity-80 transition-opacity">
                 <h1 className="text-lg font-bold text-gray-900 tracking-wider">
-                    MANAGER MODE
+                    Breadcrumb
                 </h1>
             </div>
         </Link>

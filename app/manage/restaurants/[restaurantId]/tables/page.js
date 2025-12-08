@@ -264,7 +264,7 @@ export default function ManageTablesPage() {
                                 <ArrowLeft size={20} />
                             </button>
                             <div>
-                                <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">MANAGER MODE</h1>
+                                <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">Breadcrumb</h1>
                                 <h2 className="text-2xl sm:text-3xl font-bold mt-2">Управління столиками</h2>
                                 <p className="text-gray-500 text-base mt-1">Ресторан #{restaurantId}</p>
                             </div>

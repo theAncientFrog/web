@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -12,14 +11,22 @@ export async function GET(request: Request) {
 
     if (!restaurantId) {
       return NextResponse.json(
-        { error: 'Необхідно вказати "restaurantId"' },
+        { error: 'restaurantId is required' },
         { status: 400 }
       );
     }
 
-    const numericRestaurantId = Number(restaurantId);
+    const numericRestaurantId = parseInt(restaurantId);
+    if (isNaN(numericRestaurantId)) {
+      return NextResponse.json(
+        { error: 'Invalid restaurantId' },
+        { status: 400 }
+      );
+    }
 
-    // Отримуємо всі головні категорії з підкатегоріями та стравами
+    console.log(`[Categories API] Fetching categories for restaurantId: ${numericRestaurantId}`);
+
+    // Отримуємо всі головні категорії (parentId === null) з підкатегоріями
     const mainCategories = await prisma.category.findMany({
       where: {
         restaurantId: numericRestaurantId,
@@ -28,22 +35,42 @@ export async function GET(request: Request) {
       include: {
         subcategories: {
           include: {
+            _count: {
+              select: {
+                dishes: true,
+              },
+            },
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        },
+        _count: {
+          select: {
             dishes: true,
           },
         },
-        dishes: true,
+      },
+      orderBy: {
+        name: 'asc',
       },
     });
 
-    // Перетворюємо структуру для сумісності з існуючим фронтендом
-    const formattedCategories = mainCategories.map(mainCat => ({
-      id: mainCat.id, // Використовуємо числовий ID з бази даних
-      name: mainCat.name,
-      subcategories: mainCat.subcategories.map(subCat => ({
-        id: subCat.id,
-        name: subCat.name,
-        dishes: subCat.dishes
-      }))
+    console.log(`[Categories API] Found ${mainCategories.length} main categories`);
+
+    // Форматуємо відповідь
+    const formattedCategories = mainCategories.map((category) => ({
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      type: category.type,
+      subcategories: category.subcategories.map((sub) => ({
+        id: sub.id,
+        name: sub.name,
+        description: sub.description,
+        dishCount: sub._count.dishes,
+      })),
+      dishCount: category._count.dishes,
     }));
 
     return NextResponse.json(formattedCategories, { status: 200 });
@@ -55,4 +82,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

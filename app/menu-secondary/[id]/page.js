@@ -14,10 +14,15 @@ import {
     User,
     ChevronDown,
     ChevronRight,
+    Settings,
+    Search,
+    Filter,
+    X,
 } from 'lucide-react';
 import ProfileModal from '../../components/ProfileModal';
 import CartModal from '../../components/CartModal';
 import MyOrdersModal from '../../components/MyOrdersModal';
+import MenuSettingsModal from '../../components/MenuSettingsModal';
 import Footer from '../../components/Footer';
 import MenuItem from '../../components/MenuItem';
 
@@ -36,13 +41,36 @@ function MenuSecondaryContent() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isOrdersOpen, setIsOrdersOpen] = useState(false);
+    const [isMenuSettingsOpen, setIsMenuSettingsOpen] = useState(false);
     const [loyalty, setLoyalty] = useState({ level: 1, progress: 0 });
     const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(true);
     const [categoryLevels, setCategoryLevels] = useState({}); // { categoryId: { level, progress } }
     const [expandedCategories, setExpandedCategories] = useState(new Set());
     const [selectedMainCategory, setSelectedMainCategory] = useState(null); // Для мобільної версії
+    const [searchQuery, setSearchQuery] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [priceFilter, setPriceFilter] = useState({ min: '', max: '' });
+    const [caloriesFilter, setCaloriesFilter] = useState({ min: '', max: '' });
+    const [excludedAllergens, setExcludedAllergens] = useState([]); // Масив алергенів, які потрібно приховати
+
+    // Список стандартних алергенів
+    const commonAllergens = [
+        'Глютен',
+        'Яйця',
+        'Молочні продукти',
+        'Риба',
+        'Морепродукти',
+        'Горіхи',
+        'Арахіс',
+        'Соя',
+        'Сіль',
+        'Цукор',
+        'Лактоза'
+    ];
 
     const categoryRefs = useRef({});
+    const headerRef = useRef(null);
+    const [headerHeight, setHeaderHeight] = useState(0);
     const restaurantId = params.id;
     const currentCategory = searchParams.get('category');
     const tableNumber = searchParams.get('table'); // Номер столика з URL
@@ -53,6 +81,20 @@ function MenuSecondaryContent() {
             console.log('[Menu] tableNumber з URL:', tableNumber);
         }
     }, [tableNumber]);
+
+    // Обчислюємо висоту хедера для sticky навбара
+    useEffect(() => {
+        const updateHeaderHeight = () => {
+            if (headerRef.current) {
+                setHeaderHeight(headerRef.current.offsetHeight);
+            }
+        };
+        
+        updateHeaderHeight();
+        window.addEventListener('resize', updateHeaderHeight);
+        
+        return () => window.removeEventListener('resize', updateHeaderHeight);
+    }, [restaurant, loyalty]);
 
     const userName = session?.user?.name || 'Клієнт';
     const profileInitial = userName.charAt(0);
@@ -83,10 +125,16 @@ function MenuSecondaryContent() {
             fetch(`/api/categories?restaurantId=${restaurantId}`)
                 .then(res => res.json())
                 .then(data => {
-                    setCategories(data);
+                    // Перевіряємо, чи дані є масивом
+                    if (Array.isArray(data)) {
+                        setCategories(data);
+                    } else {
+                        console.error('Categories data is not an array:', data);
+                        setCategories([]);
+                    }
                     
                     // Якщо немає категорії в URL, переходимо до першої підкатегорії
-                    if (!currentCategory && data.length > 0) {
+                    if (!currentCategory && Array.isArray(data) && data.length > 0) {
                         const firstMainCat = data[0];
                         // Встановлюємо першу батьківську категорію для мобільної версії
                         setSelectedMainCategory(firstMainCat.name);
@@ -100,13 +148,14 @@ function MenuSecondaryContent() {
                 })
                 .catch(error => {
                     console.error('Error fetching categories:', error);
+                    setCategories([]); // Встановлюємо порожній масив у разі помилки
                 });
         }
     }, [restaurantId, currentCategory, router]);
 
     // Завантаження всіх страв з усіх підкатегорій
     useEffect(() => {
-        if (restaurantId && categories.length > 0) {
+        if (restaurantId && Array.isArray(categories) && categories.length > 0) {
             setIsLoadingDishes(true);
             
             // Збираємо всі підкатегорії
@@ -253,7 +302,7 @@ function MenuSecondaryContent() {
 
     // Автоматично розгортаємо категорію, якщо вона містить активну підкатегорію
     useEffect(() => {
-        if (currentCategory && categories.length > 0) {
+        if (currentCategory && Array.isArray(categories) && categories.length > 0) {
             categories.forEach(mainCat => {
                 if (mainCat.subcategories && mainCat.subcategories.some(sub => sub.name === currentCategory)) {
                     setExpandedCategories(prev => new Set(prev).add(mainCat.name));
@@ -266,7 +315,7 @@ function MenuSecondaryContent() {
 
     // Автоматично вибираємо першу батьківську категорію при завантаженні
     useEffect(() => {
-        if (categories.length > 0 && !selectedMainCategory) {
+        if (Array.isArray(categories) && categories.length > 0 && !selectedMainCategory) {
             setSelectedMainCategory(categories[0].name);
         }
     }, [categories, selectedMainCategory]);
@@ -318,6 +367,10 @@ function MenuSecondaryContent() {
         <>
             {/* Modals */}
             <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+            <MenuSettingsModal 
+                isOpen={isMenuSettingsOpen} 
+                onClose={() => setIsMenuSettingsOpen(false)} 
+            />
             <CartModal 
                 isOpen={isCartOpen} 
                 onClose={() => {
@@ -334,16 +387,17 @@ function MenuSecondaryContent() {
 
             <div className="min-h-screen bg-white dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100">
                 {/* Header з лого, назвою та описом */}
-                <header className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
-                    <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+                <header ref={headerRef} className="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-100 dark:border-gray-700">
+                    <div className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 sm:pt-4 pb-0">
                         <div className="flex items-center justify-between gap-2 sm:gap-4">
                             {/* Ліва частина: кнопка назад + логотип + назва + опис */}
                             <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                                <Link href={`/menu/${restaurantId}`}>
-                                    <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition flex-shrink-0">
-                                        <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                                    </button>
-                                </Link>
+                                <button 
+                                    onClick={() => router.back()}
+                                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition flex-shrink-0"
+                                >
+                                    <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                                </button>
 
                                 {/* Логотип */}
                                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex-shrink-0 overflow-hidden">
@@ -390,6 +444,13 @@ function MenuSecondaryContent() {
                                 {/* Іконки */}
                                 <div className="flex items-center gap-1 sm:gap-2">
                                     <button
+                                        onClick={() => setIsMenuSettingsOpen(true)}
+                                        className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                                    >
+                                        <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-300" />
+                                    </button>
+
+                                    <button
                                         onClick={() => setIsOrdersOpen(true)}
                                         className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                                     >
@@ -430,14 +491,13 @@ function MenuSecondaryContent() {
                             </div>
                         </div>
                     </div>
-                </header>
-
-                {/* Мобільна версія категорій - дві смужки під хедером */}
-                <div className="md:hidden bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-[80px] sm:top-[90px] z-40 shadow-sm">
-                    {/* Перша смужка - батьківські категорії */}
+                    
+                    {/* Мобільна версія категорій - дві смужки під хедером (всередині хедера) */}
+                    <div className="md:hidden border-t border-gray-200 dark:border-gray-700">
+                        {/* Перша смужка - батьківські категорії */}
                     <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
                         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                            {categories.map((mainCat) => {
+                            {Array.isArray(categories) && categories.map((mainCat) => {
                                 const isSelected = selectedMainCategory === mainCat.name;
                                 return (
                                     <button
@@ -465,7 +525,7 @@ function MenuSecondaryContent() {
 
                     {/* Друга смужка - дочірні категорії вибраної батьківської */}
                     {selectedMainCategory && (() => {
-                        const selectedMainCat = categories.find(cat => cat.name === selectedMainCategory);
+                        const selectedMainCat = Array.isArray(categories) ? categories.find(cat => cat.name === selectedMainCategory) : null;
                         const subcategories = selectedMainCat?.subcategories || [];
                         
                         if (subcategories.length === 0) return null;
@@ -493,6 +553,162 @@ function MenuSecondaryContent() {
                             </div>
                         );
                     })()}
+                    </div>
+                </header>
+
+                {/* Пошук та фільтри */}
+                <div className="max-w-7xl mx-auto px-4 pt-4 sm:pt-6">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-4">
+                        {/* Рядок з пошуком та кнопкою фільтрів */}
+                        <div className="flex gap-3 mb-4">
+                            {/* Поле пошуку */}
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Пошук страв..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {/* Кнопка фільтрів */}
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
+                                    showFilters
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                            >
+                                <Filter size={18} />
+                                <span className="hidden sm:inline">Фільтри</span>
+                            </button>
+                        </div>
+
+                        {/* Панель фільтрів */}
+                        {showFilters && (
+                            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
+                                {/* Фільтр за ціною */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Мін. ціна (грн)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="0"
+                                            value={priceFilter.min}
+                                            onChange={(e) => setPriceFilter(prev => ({ ...prev, min: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Макс. ціна (грн)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="Без обмежень"
+                                            value={priceFilter.max}
+                                            onChange={(e) => setPriceFilter(prev => ({ ...prev, max: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Фільтр за калорійністю */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Мін. калорії
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="0"
+                                            value={caloriesFilter.min}
+                                            onChange={(e) => setCaloriesFilter(prev => ({ ...prev, min: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Макс. калорії
+                                        </label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="Без обмежень"
+                                            value={caloriesFilter.max}
+                                            onChange={(e) => setCaloriesFilter(prev => ({ ...prev, max: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Фільтр за алергенами */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Приховати страви з алергенами
+                                    </label>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                        Оберіть алергени, які вам не підходять. Страви з цими алергенами будуть приховані.
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {commonAllergens.map((allergen) => {
+                                            const isSelected = excludedAllergens.includes(allergen);
+                                            return (
+                                                <button
+                                                    key={allergen}
+                                                    onClick={() => {
+                                                        setExcludedAllergens(prev => 
+                                                            isSelected
+                                                                ? prev.filter(a => a !== allergen)
+                                                                : [...prev, allergen]
+                                                        );
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                                                        isSelected
+                                                            ? 'bg-red-600 text-white hover:bg-red-700'
+                                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                    }`}
+                                                >
+                                                    {allergen}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Кнопка скидання фільтрів */}
+                                {(searchQuery || priceFilter.min || priceFilter.max || caloriesFilter.min || caloriesFilter.max || excludedAllergens.length > 0) && (
+                                    <button
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setPriceFilter({ min: '', max: '' });
+                                            setCaloriesFilter({ min: '', max: '' });
+                                            setExcludedAllergens([]);
+                                        }}
+                                        className="w-full py-2 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                                    >
+                                        Скинути фільтри
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8 flex gap-4 sm:gap-8 lg:gap-12">
@@ -500,7 +716,7 @@ function MenuSecondaryContent() {
                     <aside className="w-56 hidden md:block flex-shrink-0 sticky top-24 md:top-32 h-[calc(100vh-120px)] md:h-[calc(100vh-140px)] overflow-y-auto select-none custom-scrollbar pr-2">
                         <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Категорії</h2>
                         <nav className="space-y-1">
-                            {categories.map((mainCat) => {
+                            {Array.isArray(categories) && categories.map((mainCat) => {
                                 const isExpanded = expandedCategories.has(mainCat.name);
                                 const hasSubcategories = mainCat.subcategories && mainCat.subcategories.length > 0;
                                 
@@ -558,98 +774,192 @@ function MenuSecondaryContent() {
                             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                                 Завантаження страв...
                             </div>
-                        ) : allDishesByCategory.length === 0 ? (
-                            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                                Страви не знайдено
-                            </div>
-                        ) : (
-                            <div className="space-y-12">
-                                {allDishesByCategory.map((categoryData) => {
-                                    const categoryId = `category-${categoryData.categoryName}`;
-                                    return (
-                                        <div
-                                            key={categoryData.categoryId}
-                                            id={categoryId}
-                                            ref={(el) => (categoryRefs.current[categoryId] = el)}
-                                            className="scroll-mt-24"
-                                        >
-                                            {/* Заголовок категорії з рівнем та шкалою */}
-                                            <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700">
-                                                <div className="flex items-center justify-between mb-2 gap-2">
-                                                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate flex-1">
-                                                        {categoryData.categoryName}
-                                                    </h2>
-                                                    {status === 'authenticated' && (() => {
-                                                        const catLevel = categoryLevels[categoryData.mainCategoryId];
-                                                        console.log(`[Category Display] Категорія ${categoryData.categoryName} (mainCategoryId: ${categoryData.mainCategoryId}):`, catLevel);
-                                                        // Показуємо рівень завжди, але знижку тільки якщо є статистика
-                                                        if (!catLevel) {
-                                                            // Якщо немає даних, показуємо рівень 1
+                        ) : (() => {
+                            // Фільтрація страв
+                            const filteredDishesByCategory = allDishesByCategory.map(categoryData => {
+                                const filteredDishes = categoryData.dishes.filter(dish => {
+                                    // Пошук за назвою та описом
+                                    if (searchQuery) {
+                                        const query = searchQuery.toLowerCase();
+                                        const matchesSearch = 
+                                            dish.name.toLowerCase().includes(query) ||
+                                            (dish.description && dish.description.toLowerCase().includes(query));
+                                        if (!matchesSearch) return false;
+                                    }
+
+                                    // Фільтр за ціною
+                                    if (priceFilter.min && dish.price < parseFloat(priceFilter.min)) {
+                                        return false;
+                                    }
+                                    if (priceFilter.max && dish.price > parseFloat(priceFilter.max)) {
+                                        return false;
+                                    }
+
+                                    // Фільтр за калорійністю
+                                    if (caloriesFilter.min && (!dish.calories || dish.calories < parseFloat(caloriesFilter.min))) {
+                                        return false;
+                                    }
+                                    if (caloriesFilter.max && (!dish.calories || dish.calories > parseFloat(caloriesFilter.max))) {
+                                        return false;
+                                    }
+
+                                    // Фільтр за алергенами - приховуємо страви, які містять вибрані алергени
+                                    if (excludedAllergens.length > 0) {
+                                        // Якщо у страви немає алергенів, вона залишається видимою
+                                        if (!dish.allergens || dish.allergens.trim() === '') {
+                                            // Страва без алергенів - показуємо
+                                        } else {
+                                            // Нормалізуємо рядок алергенів: видаляємо зайві пробіли та переводимо в нижній регістр
+                                            const normalizedDishAllergens = dish.allergens
+                                                .split(',')
+                                                .map(a => a.trim().toLowerCase())
+                                                .filter(a => a.length > 0);
+                                            
+                                            // Нормалізуємо вибрані алергени
+                                            const normalizedExcluded = excludedAllergens.map(a => a.trim().toLowerCase());
+                                            
+                                            // Перевіряємо, чи є хоча б один вибраний алерген у страві
+                                            const hasExcludedAllergen = normalizedExcluded.some(excluded => {
+                                                // Перевіряємо кожен алерген страви
+                                                return normalizedDishAllergens.some(dishAllergen => {
+                                                    // Точне співпадіння
+                                                    if (dishAllergen === excluded) {
+                                                        console.log(`[Allergen Filter] Exact match: "${dishAllergen}" === "${excluded}" for dish "${dish.name}"`);
+                                                        return true;
+                                                    }
+                                                    // Перевіряємо, чи містить алерген страви вибраний алерген
+                                                    // Наприклад: "молочні продукти" містить "молочні"
+                                                    if (dishAllergen.includes(excluded)) {
+                                                        console.log(`[Allergen Filter] Contains match: "${dishAllergen}" includes "${excluded}" for dish "${dish.name}"`);
+                                                        return true;
+                                                    }
+                                                    // Перевіряємо навпаки (на випадок, якщо назви трохи відрізняються)
+                                                    if (excluded.includes(dishAllergen)) {
+                                                        console.log(`[Allergen Filter] Reverse match: "${excluded}" includes "${dishAllergen}" for dish "${dish.name}"`);
+                                                        return true;
+                                                    }
+                                                    return false;
+                                                });
+                                            });
+                                            
+                                            // Якщо знайдено вибраний алерген - приховуємо страву
+                                            if (hasExcludedAllergen) {
+                                                console.log(`[Allergen Filter] Hiding dish "${dish.name}" with allergens: "${dish.allergens}"`);
+                                                return false;
+                                            }
+                                        }
+                                    }
+
+                                    return true;
+                                });
+
+                                return {
+                                    ...categoryData,
+                                    dishes: filteredDishes
+                                };
+                            }).filter(categoryData => categoryData.dishes.length > 0); // Прибираємо категорії без страв
+
+                            if (filteredDishesByCategory.length === 0) {
+                                return (
+                                    <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                                        <p className="text-lg mb-2">Страви не знайдено</p>
+                                        <p className="text-sm">Спробуйте змінити параметри пошуку або фільтри</p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="space-y-12">
+                                    {filteredDishesByCategory.map((categoryData) => {
+                                        const categoryId = `category-${categoryData.categoryName}`;
+                                        return (
+                                            <div
+                                                key={categoryData.categoryId}
+                                                id={categoryId}
+                                                ref={(el) => (categoryRefs.current[categoryId] = el)}
+                                                className="scroll-mt-24"
+                                            >
+                                                {/* Заголовок категорії з рівнем та шкалою */}
+                                                <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700">
+                                                    <div className="flex items-center justify-between mb-2 gap-2">
+                                                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate flex-1">
+                                                            {categoryData.categoryName}
+                                                            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                                                                ({categoryData.dishes.length})
+                                                            </span>
+                                                        </h2>
+                                                        {status === 'authenticated' && (() => {
+                                                            const catLevel = categoryLevels[categoryData.mainCategoryId];
+                                                            console.log(`[Category Display] Категорія ${categoryData.categoryName} (mainCategoryId: ${categoryData.mainCategoryId}):`, catLevel);
+                                                            // Показуємо рівень завжди, але знижку тільки якщо є статистика
+                                                            if (!catLevel) {
+                                                                // Якщо немає даних, показуємо рівень 1
+                                                                return (
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                                                                            lvl. 1
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            // Знижка тільки якщо є статистика (hasStats === true)
+                                                            const discount = catLevel.hasStats ? Math.min(catLevel.level * 2, 20) : 0; // 2% за рівень, максимум 20%
                                                             return (
                                                                 <div className="flex items-center gap-3">
-                                                                    <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                                                                        lvl. 1
+                                                                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">
+                                                                        lvl. {catLevel.level}
                                                                     </span>
+                                                                    {discount > 0 && (
+                                                                        <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
+                                                                            -{discount}%
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             );
-                                                        }
-                                                        // Знижка тільки якщо є статистика (hasStats === true)
-                                                        const discount = catLevel.hasStats ? Math.min(catLevel.level * 2, 20) : 0; // 2% за рівень, максимум 20%
+                                                        })()}
+                                                    </div>
+                                                    {status === 'authenticated' && (() => {
+                                                        const catLevel = categoryLevels[categoryData.mainCategoryId];
+                                                        // Показуємо прогрес завжди (навіть якщо 0%)
+                                                        const progress = catLevel ? catLevel.progress : 0;
                                                         return (
                                                             <div className="flex items-center gap-3">
-                                                                <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                                                    lvl. {catLevel.level}
+                                                                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
+                                                                    <div 
+                                                                        className="bg-green-500 dark:bg-green-600 h-2 rounded-full transition-all duration-300" 
+                                                                        style={{ width: `${progress}%` }}
+                                                                    ></div>
+                                                                </div>
+                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                    {progress}%
                                                                 </span>
-                                                                {discount > 0 && (
-                                                                    <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
-                                                                        -{discount}%
-                                                                    </span>
-                                                                )}
                                                             </div>
                                                         );
                                                     })()}
                                                 </div>
-                                                {status === 'authenticated' && (() => {
-                                                    const catLevel = categoryLevels[categoryData.mainCategoryId];
-                                                    // Показуємо прогрес завжди (навіть якщо 0%)
-                                                    const progress = catLevel ? catLevel.progress : 0;
-                                                    return (
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
-                                                                <div 
-                                                                    className="bg-green-500 dark:bg-green-600 h-2 rounded-full transition-all duration-300" 
-                                                                    style={{ width: `${progress}%` }}
-                                                                ></div>
-                                                            </div>
-                                                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                                                                {progress}%
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })()}
-                                            </div>
 
-                                            {/* Страви категорії */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                                {categoryData.dishes.map((dish) => {
-                                                    const catLevel = categoryLevels[categoryData.mainCategoryId];
-                                                    // Знижка тільки якщо є статистика (hasStats === true)
-                                                    const discount = catLevel && catLevel.hasStats ? Math.min(catLevel.level * 2, 20) : 0; // 2% за рівень, максимум 20%
-                                                    return (
-                                                        <MenuItem 
-                                                            key={dish.id} 
-                                                            dish={dish} 
-                                                            restaurantId={restaurantId}
-                                                            discount={discount}
-                                                        />
-                                                    );
-                                                })}
+                                                {/* Страви категорії */}
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                                                    {categoryData.dishes.map((dish) => {
+                                                        const catLevel = categoryLevels[categoryData.mainCategoryId];
+                                                        // Знижка тільки якщо є статистика (hasStats === true)
+                                                        const discount = catLevel && catLevel.hasStats ? Math.min(catLevel.level * 2, 20) : 0; // 2% за рівень, максимум 20%
+                                                        return (
+                                                            <MenuItem 
+                                                                key={dish.id} 
+                                                                dish={dish} 
+                                                                restaurantId={restaurantId}
+                                                                discount={discount}
+                                                            />
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                     </main>
                 </div>
 

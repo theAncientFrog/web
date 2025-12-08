@@ -1,10 +1,11 @@
 // app/components/MenuItem.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import DishModal from './DishModal';
 
 interface MenuItemProps {
     dish: {
@@ -13,6 +14,8 @@ interface MenuItemProps {
         price: number;
         imageUrl?: string | null;
         description?: string | null;
+        calories?: number | null;
+        allergens?: string | null;
     };
     restaurantId: string;
     discount?: number; // Знижка в відсотках
@@ -21,10 +24,51 @@ interface MenuItemProps {
 const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
     const { addToCart } = useCart();
     const [isAdding, setIsAdding] = useState(false);
+    const [showCalories, setShowCalories] = useState(true);
+    const [showAllergens, setShowAllergens] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Завантажуємо налаштування з localStorage та слухаємо зміни
+    useEffect(() => {
+        const loadSettings = () => {
+            const savedShowCalories = localStorage.getItem('menu_showCalories');
+            const savedShowAllergens = localStorage.getItem('menu_showAllergens');
+            
+            if (savedShowCalories !== null) setShowCalories(savedShowCalories === 'true');
+            if (savedShowAllergens !== null) setShowAllergens(savedShowAllergens === 'true');
+        };
+
+        loadSettings();
+
+        // Слухаємо зміни в localStorage
+        const handleStorageChange = (e) => {
+            if (e.key === 'menu_showCalories' || e.key === 'menu_showAllergens') {
+                loadSettings();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Також слухаємо події на тому ж вікні (для синхронізації між компонентами)
+        const handleCustomStorageChange = () => {
+            loadSettings();
+        };
+        
+        window.addEventListener('menuSettingsChanged', handleCustomStorageChange);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('menuSettingsChanged', handleCustomStorageChange);
+        };
+    }, []);
 
     // Розраховуємо ціну зі знижкою
     const originalPrice = dish.price;
     const discountedPrice = discount > 0 ? originalPrice * (1 - discount / 100) : originalPrice;
+    
+    // Перевіряємо, чи є калорійність та алергени
+    const hasCalories = dish.calories !== null && dish.calories !== undefined && dish.calories > 0;
+    const hasAllergens = dish.allergens && dish.allergens.trim().length > 0;
 
     const handleAddToCart = () => {
         setIsAdding(true);
@@ -42,7 +86,18 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg dark:hover:shadow-xl transition-shadow duration-200 overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col">
+        <>
+            <DishModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                dish={dish}
+                restaurantId={restaurantId}
+                discount={discount}
+            />
+            <div 
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg dark:hover:shadow-xl transition-shadow duration-200 overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col cursor-pointer"
+                onClick={() => setIsModalOpen(true)}
+            >
             {/* Зображення страви */}
             <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
                 <Image
@@ -68,6 +123,34 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
                     </p>
                 )}
 
+                {/* Калорійність та алергени */}
+                <div className="mb-3 space-y-2">
+                    {/* Калорійність */}
+                    {hasCalories && showCalories && (
+                        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                            <span className="font-medium">Калорійність:</span>
+                            <span>{dish.calories} ккал</span>
+                        </div>
+                    )}
+                    
+                    {/* Алергени */}
+                    {hasAllergens && showAllergens && (
+                        <div className="flex flex-col gap-1.5">
+                            <span className="text-xs font-semibold text-orange-600 dark:text-orange-400">Алергени:</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {dish.allergens.split(',').map((allergen, index) => (
+                                    <span
+                                        key={index}
+                                        className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800"
+                                    >
+                                        {allergen.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Ціна та кнопка */}
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
                     <div className="flex flex-col">
@@ -87,7 +170,10 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
                         )}
                     </div>
                     <button
-                        onClick={handleAddToCart}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart();
+                        }}
                         disabled={isAdding}
                         className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-full p-2 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                         aria-label={`Додати ${dish.name} до кошика`}
@@ -97,6 +183,7 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
                 </div>
             </div>
         </div>
+        </>
     );
 };
 

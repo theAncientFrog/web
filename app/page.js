@@ -12,7 +12,7 @@ const HomePage= () => {
     <div className="min-h-screen bg-gray-50">
       
       <BreadcrumbHeader 
-        breadcrumpText="Breadcrump"
+        breadcrumpText="Breadcrumb"
         description="Смак починається з меню"
         forceLightTheme={true}
       />

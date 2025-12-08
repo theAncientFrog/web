@@ -70,7 +70,10 @@ export default function PartnersPage() {
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
 
             {/* 3. Передайте функцію для відкриття модалки в Header */}
-            <Header onProfileClick={() => setIsProfileOpen(true)} />
+            <Header 
+                breadcrumpText="Breadcrumb"
+                onProfileClick={() => setIsProfileOpen(true)} 
+            />
 
             {/* 4. Додайте ProfileModal сюди, щоб він міг рендеритись */}
             <ProfileModal

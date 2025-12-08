@@ -121,7 +121,7 @@ export const CartProvider = ({ children }) => {
      */
     const clearCart = () => {
         setCartItems([]);
-        setCartRestaurantId(null);
+        setCartRestaurantId(null); 
         
         // Очищуємо localStorage для поточного користувача
         try {

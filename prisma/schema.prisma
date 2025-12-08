@@ -4,12 +4,10 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
-  provider  = "postgresql"
-  
-  url       = env("DATABASE_URL")
-  // DIRECT_URL опціональний - використовується тільки для міграцій, на Vercel не потрібен
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -17,52 +15,46 @@ enum Role {
   OWNER
 }
 
-enum MainCategoryType {
-  FOOD
-  DRINKS
-  ALCOHOL
-  MERCH
-}
-
 // --- ОНОВЛЕНА Модель Користувача ---
 model User {
-  id                  Int                   @id @default(autoincrement())
-  name                String?
-  email               String?               @unique
-  emailVerified       DateTime?
-  image               String?
-  password            String?
-  role                Role                  @default(CUSTOMER)
-  level               Int                   @default(1)
-  progress            Int                   @default(0)
-  
+  id            Int      @id @default(autoincrement())
+  name          String?  // Google надасть ім'я
+  email         String?  @unique // Email може бути null доки не верифіковано
+  emailVerified DateTime?
+  image         String?  // Google надасть фото профілю
+  password      String?  // Пароль стає опціональним (для Google входу він не потрібен)
+
+  role      Role     @default(CUSTOMER)
+  level     Int      @default(1)
+  progress  Int      @default(0)
+
   // Зв'язки NextAuth
-  accounts            Account[]
-  sessions            Session[]
-  
+  accounts Account[]
+  sessions Session[]
+
   // Ваші зв'язки
-  restaurants         Restaurant[]
-  orders              Order[]
+  restaurants Restaurant[]
+  orders      Order[]
   userRestaurantStats UserRestaurantStats[]
-  userCategoryStats   UserCategoryStats[]
-  userAchievements    UserAchievement[]
+  comments    Comment[]
 }
 
 // --- НОВІ МОДЕЛІ ДЛЯ NEXT-AUTH ---
 model Account {
-  id                Int     @id @default(autoincrement())
-  userId            Int
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -85,97 +77,99 @@ model VerificationToken {
 
 // --- НОВІ МОДЕЛІ ---
 model UserRestaurantStats {
-  id           Int        @id @default(autoincrement())
+  id           Int @id @default(autoincrement())
   userId       Int
   restaurantId Int
-  xp           Int        @default(0)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  xp           Int @default(0) // Досвід
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 
   @@unique([userId, restaurantId])
 }
 
-model UserCategoryStats {
-  id           Int        @id @default(autoincrement())
-  userId       Int
-  categoryId   Int
-  restaurantId Int
-  xp           Int        @default(0)
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, categoryId])
+enum CategoryType {
+  KITCHEN // Кухня
+  DRINKS  // Напої (безалкогольні)
+  ALCOHOL // Алкоголь
+  MERCH   // Мерч/Інше
 }
 
 // --- Ваші існуючі моделі ---
 model Restaurant {
-  id                  Int                   @id @default(autoincrement())
-  name                String
-  description         String?
-  imageUrl            String?
-  bannerUrl           String?
-  logoUrl             String?
-  address             String?
-  stars               Float?
-  ownerId             Int
-  owner               User                  @relation(fields: [ownerId], references: [id])
-  categories          Category[]
-  orders              Order[]
-  tables              Table[]
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  imageUrl    String?
+  bannerUrl   String?
+  logoUrl     String?
+  address     String?
+  stars       Float?
+  ownerId     Int
+  owner       User     @relation(fields: [ownerId], references: [id])
+  categories  Category[]
+  orders      Order[]
   userRestaurantStats UserRestaurantStats[]
-  userCategoryStats   UserCategoryStats[]
 }
-
 model Category {
   id           Int     @id @default(autoincrement())
   name         String
   description  String?
-  iconName     String? // Назва іконки для батьківської категорії
-  mainType     MainCategoryType?
-  parentId     Int?
-  restaurantId Int
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  // Category hierarchy
+  type         CategoryType @default(KITCHEN)
+  parentId     Int?  // Parent category ID for subcategories
   parent       Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
   subcategories Category[] @relation("CategoryHierarchy")
+
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   dishes       Dish[]
-  userCategoryStats UserCategoryStats[]
 }
 
 model Dish {
-  id          Int         @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   name        String
   description String?
   price       Float
   calories    Int?
+  allergens   String? // JSON string або comma-separated список алергенів
   imageUrl    String?
   categoryId  Int
-  category    Category    @relation(fields: [categoryId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
   orderItems  OrderItem[]
+  comments    Comment[]
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
 }
 
 model Order {
   id           Int         @id @default(autoincrement())
   createdAt    DateTime    @default(now())
   totalPrice   Float
-  status       String      @default("PENDING")
+  status       OrderStatus @default(PENDING)
+  tableNumber  String?
   userId       Int
-  restaurantId Int
-  tableNumber  String?     // Номер столика (опціонально, бо не всі замовлення зі столика)
   user         User        @relation(fields: [userId], references: [id])
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId Int
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
   items        OrderItem[]
 }
 
 model OrderItem {
-  id              Int     @id @default(autoincrement())
-  quantity        Int
-  price           Float
-  priceAtPurchase Float?  // Ціна на момент покупки (може бути null для старих записів)
-  orderId         Int
-  dishId          Int
-  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  dish            Dish    @relation(fields: [dishId], references: [id])
+  id             Int     @id @default(autoincrement())
+  quantity       Int
+  priceAtPurchase Float  // Ціна на момент покупки
+  orderId        Int
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  dishId         Int
+  dish           Dish    @relation(fields: [dishId], references: [id])
 }
 
 model Achievement {
@@ -183,39 +177,18 @@ model Achievement {
   code        String @unique
   name        String
   description String
-  iconUrl     String?
-  userAchievements UserAchievement[]
+  iconUrl     String
 }
 
-model UserAchievement {
-  id            Int       @id @default(autoincrement())
-  userId        Int
-  achievementId Int
-  unlockedAt    DateTime  @default(now())
-
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, achievementId])
-}
-
-model EmailVerificationCode {
+model Comment {
   id        Int      @id @default(autoincrement())
-  email     String
-  code      String
-  expiresAt DateTime
+  text      String
+  createdAt DateTime @default(now())
+  userId    Int
+  dishId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
 
-  @@index([email])
-}
-
-model Table {
-  id           Int        @id @default(autoincrement())
-  number       String     // Номер столика (може бути будь-який формат: "1", "A1", "VIP-1" тощо)
-  qrCodeUrl    String?    // URL QR коду (генерується на сервері)
-  restaurantId Int
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@unique([restaurantId, number]) // Унікальний номер столика в межах ресторану
+  @@index([dishId])
+  @@index([userId])
 }

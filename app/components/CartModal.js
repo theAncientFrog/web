@@ -5,12 +5,21 @@ import { useState } from 'react';
 import { useCart } from '@/context/CartContext'; 
 import Image from 'next/image';
 import { X, Trash2, Minus, Plus } from 'lucide-react';
+import OrderNotificationModal from './OrderNotificationModal';
 
 // 💡 1. Компонент тепер приймає "restaurantId" та "tableNumber" як пропси
 export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }) {
     const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart(); 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [notification, setNotification] = useState({
+        isOpen: false,
+        type: 'success',
+        title: '',
+        message: '',
+        orderId: null,
+        orderDetails: null,
+    });
 
     if (!isOpen) {
         return null;
@@ -55,14 +64,29 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 throw new Error(data.message || 'Failed to place order');
             }
 
-            // Успіх!
-            alert('Ваше замовлення успішно оформлено! Очікуйте підтвердження на Кухні.');
+            // Успіх! Показуємо красиве модальне вікно
+            setNotification({
+                isOpen: true,
+                type: 'success',
+                title: 'Замовлення успішно оформлено!',
+                message: 'Ваше замовлення прийнято в обробку. Очікуйте підтвердження від кухні.',
+                orderId: data.order?.id || null,
+                orderDetails: {
+                    items: cartItems.map(item => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                        price: item.price,
+                    })),
+                    totalPrice: cartTotal,
+                    tableNumber: tableNumber,
+                },
+            });
             
             clearCart();
-            // Невелика затримка перед закриттям, щоб дати час API оновити дані
+            // Закриваємо модалку кошика
             setTimeout(() => {
-                onClose(); // Закриваємо модалку
-            }, 500);
+                onClose();
+            }, 300);
 
         } catch (err) {
             console.error('Order error:', err);
@@ -80,8 +104,21 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
 
 
     return (
-        // profileOverlay
-        <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-3 sm:p-4 z-50" onClick={onClose}>
+        <>
+            {/* Модалка сповіщень */}
+            <OrderNotificationModal
+                isOpen={notification.isOpen}
+                onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+                type={notification.type}
+                title={notification.title}
+                message={notification.message}
+                orderId={notification.orderId}
+                orderDetails={notification.orderDetails}
+                autoCloseDelay={6000}
+            />
+            
+            {/* profileOverlay */}
+            <div className="fixed inset-0 bg-black/60 flex justify-center items-center p-3 sm:p-4 z-50" onClick={onClose}>
             {/* profileModal + cartModal (max-w-lg) */}
             <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-lg shadow-2xl relative flex flex-col max-h-[95vh] sm:max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
                 {/* profileCloseButton */}
@@ -184,5 +221,6 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 )}
             </div>
         </div>
+        </>
     );
 }

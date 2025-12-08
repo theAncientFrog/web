@@ -1,18 +1,20 @@
 // app/login/page.js
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
-import { Mail, Lock, User, LogIn } from 'lucide-react'; 
+import { Mail, Lock, User, LogIn, Building2 } from 'lucide-react'; 
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
-    const { data: session, status, update } = useSession(); 
+    const searchParams = useSearchParams();
+    const { data: session, status, update } = useSession();
+    const isOwnerMode = searchParams.get('role') === 'owner'; 
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -72,13 +74,33 @@ export default function LoginPage() {
         <main className="w-full min-h-screen flex flex-col justify-center items-center p-4 bg-gray-100">
 
             {/* loginContentWrapper */}
-            <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-10 max-w-md w-full relative">
+            <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-10 max-w-md w-full relative border-2" style={isOwnerMode ? { borderColor: '#4f46e5' } : { borderColor: '#10b981' }}>
 
                 {/* loginCloseBtn */}
                 <Link href="/" className="absolute top-4 right-4 text-2xl text-gray-400 no-underline font-bold hover:text-gray-600">×</Link>
 
+                {/* Mode Badge */}
+                {isOwnerMode ? (
+                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#eef2ff', color: '#4f46e5' }}>
+                        <span>Режим власника</span>
+                    </div>
+                ) : (
+                    <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: '#d1fae5', color: '#059669' }}>
+                        <span>Режим користувача</span>
+                    </div>
+                )}
+
                 {/* loginTitle */}
-                <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-gray-900 text-left">Вхід</h1>
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
+                    {isOwnerMode ? (
+                        <Building2 size={28} style={{ color: '#4f46e5' }} />
+                    ) : (
+                        <User size={28} style={{ color: '#10b981' }} />
+                    )}
+                    <h1 className="text-2xl sm:text-3xl font-bold text-left" style={isOwnerMode ? { color: '#4f46e5' } : { color: '#10b981' }}>
+                        {isOwnerMode ? 'Вхід як власник' : 'Вхід'}
+                    </h1>
+                </div>
 
                 <form onSubmit={handleLogin}>
 
@@ -88,7 +110,9 @@ export default function LoginPage() {
                         <div className="relative">
                             <input
                                 type="email"
-                                className="w-full px-4 py-3 pl-10 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className={`w-full px-4 py-3 pl-10 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:border-transparent ${
+                                    isOwnerMode ? 'focus:ring-indigo-500' : 'focus:ring-green-500'
+                                }`}
                                 placeholder="Введіть e-mail"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -102,7 +126,9 @@ export default function LoginPage() {
                         <div className="relative">
                             <input
                                 type="password"
-                                className="w-full px-4 py-3 pl-10 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                className={`w-full px-4 py-3 pl-10 bg-white border border-gray-300 rounded-lg text-base text-gray-900 transition focus:outline-none focus:ring-2 focus:border-transparent ${
+                                    isOwnerMode ? 'focus:ring-indigo-500' : 'focus:ring-green-500'
+                                }`}
                                 placeholder="Пароль"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -116,8 +142,19 @@ export default function LoginPage() {
                     {error && <p className="text-red-700 bg-red-100 border border-red-200 rounded-lg p-3 text-center text-sm mt-4">{error}</p>}
 
                     {/* loginSubmitBtn */}
-                    <button type="submit" className="w-full p-3 sm:p-4 border-none rounded-lg bg-green-500 text-white text-base sm:text-lg font-bold cursor-pointer mt-4 transition hover:bg-green-600 flex items-center justify-center gap-2">
-                        <LogIn size={20} /> Вхід
+                    <button 
+                        type="submit" 
+                        className="w-full p-3 sm:p-4 border-none rounded-lg text-white text-base sm:text-lg font-bold cursor-pointer mt-4 transition flex items-center justify-center gap-2 shadow-lg hover:opacity-90"
+                        style={isOwnerMode ? { 
+                            backgroundColor: '#4f46e5',
+                            boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3), 0 4px 6px -2px rgba(79, 70, 229, 0.2)'
+                        } : {
+                            backgroundColor: '#10b981',
+                            boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.2)'
+                        }}
+                    >
+                        <LogIn size={20} />
+                        {isOwnerMode ? 'Увійти як власник' : 'Вхід'}
                     </button>
                 </form>
 
@@ -132,12 +169,49 @@ export default function LoginPage() {
                 {/* loginLinks */}
                 <div className="flex justify-between mt-6 sm:mt-8 flex-wrap gap-2">
                     {/* loginLink (для власника) */}
-                    <Link href="/login?role=owner" className="text-gray-600 underline text-sm cursor-pointer transition hover:text-black">
-                        Увійти як власник
-                    </Link>
+                    {!isOwnerMode ? (
+                        <Link 
+                            href="/login?role=owner" 
+                            className="text-sm cursor-pointer transition flex items-center gap-1 font-semibold underline"
+                            style={{ color: '#10b981' }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#059669';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '#10b981';
+                            }}
+                        >
+                            <Building2 size={14} />
+                            Увійти як власник
+                        </Link>
+                    ) : (
+                        <Link 
+                            href="/login" 
+                            className="text-sm cursor-pointer transition font-semibold underline"
+                            style={{ color: '#4f46e5' }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#4338ca';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '#4f46e5';
+                            }}
+                        >
+                            Звичайний вхід
+                        </Link>
+                    )}
                     {/* loginLink (для реєстрації) */}
-                    <Link href="/signup" className="text-gray-600 underline text-sm cursor-pointer transition hover:text-black">
-                        Ще не зареєстрований?
+                    <Link 
+                        href={isOwnerMode ? "/signup?role=owner" : "/signup"} 
+                        className="text-sm cursor-pointer transition flex items-center gap-1 font-semibold underline"
+                        style={isOwnerMode ? { color: '#4f46e5' } : { color: '#10b981' }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.color = isOwnerMode ? '#4338ca' : '#059669';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = isOwnerMode ? '#4f46e5' : '#10b981';
+                        }}
+                    >
+                        {isOwnerMode ? 'Зареєструватися як власник' : 'Ще не зареєстрований?'}
                     </Link>
                 </div>
             </div>

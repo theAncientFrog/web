@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
-        const { name, email, password } = await request.json();
+        const { name, email, password, role } = await request.json();
 
         // 1. Валідація вхідних даних
         if (!email || !password || !name) {
@@ -18,6 +18,9 @@ export async function POST(request: Request) {
         if (password.length < 6) {
             return NextResponse.json({ message: 'Пароль має бути не менше 6 символів' }, { status: 400 });
         }
+
+        // Визначаємо роль користувача
+        const userRole = role === 'OWNER' ? Role.OWNER : Role.CUSTOMER;
 
         // 2. Перевірка, чи існує користувач
         const existingUser = await prisma.user.findUnique({
@@ -37,7 +40,7 @@ export async function POST(request: Request) {
                 name: name,
                 email: email.toLowerCase(),
                 password: hashedPassword,
-                role: Role.CUSTOMER, // Використовуємо enum
+                role: userRole, // Використовуємо визначену роль
                 // emailVerified залишається null
             },
         });

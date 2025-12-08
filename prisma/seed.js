@@ -1,6 +1,6 @@
 // prisma/seed.js
 console.log('!!! DEBUG: seed.js script is starting !!!');
-const { PrismaClient, Role, MainCategoryType } = require('@prisma/client');
+const { PrismaClient, Role, CategoryType } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
@@ -15,7 +15,7 @@ async function createHierarchicalMenuForRestaurant(restaurantId, menuStructure) 
             data: {
                 name: mainCategoryData.name,
                 description: mainCategoryData.description,
-                mainType: mainCategoryData.type,
+                type: mainCategoryData.type,
                 restaurantId: restaurantId
             }
         });
@@ -41,6 +41,7 @@ async function createHierarchicalMenuForRestaurant(restaurantId, menuStructure) 
                                 description: dishData.description,
                                 price: dishData.price,
                                 calories: dishData.calories,
+                                allergens: dishData.allergens || null,
                                 imageUrl: dishData.imageUrl,
                                 categoryId: subCategory.id
                             }
@@ -60,47 +61,47 @@ const nazvaMenuStructure = [
     {
         name: 'Їжа',
         description: 'Основні страви та кухня ресторану',
-        type: MainCategoryType.FOOD,
+        type: CategoryType.KITCHEN,
         subcategories: [
             {
                 name: 'Гарячі страви',
                 description: 'Основні гарячі страви української та європейської кухні',
                 dishes: [
-                    { name: 'Котлета по-київськи', description: '200г, з картопляним пюре', price: 220.0, calories: 550, imageUrl: 'https://rud.ua/uploads/under_recipe/02_600x300_5f686cb1bd6ca.jpg' },
-                    { name: 'Вареники з картоплею та грибами', description: '250г, зі шкварками та сметаною', price: 130.0, calories: 480, imageUrl: 'https://tasty1.siteo.xyz/r/o/vareniki-z-kartopleyu-163vq.jpg' },
-                    { name: 'Деруни з м\'ясом', description: '280г, зі сметаною', price: 160.0, calories: 520, imageUrl: 'https://static.espreso.tv/uploads/photobank/328000_329000/328338_fried-potato-pancakes_2829-13788_new_960x380_0.webp' },
-                    { name: 'Стейк Рібай', description: '300г, з овочами гриль', price: 450.0, calories: 600, imageUrl: 'https://images.gastronom.ru/mXFaZVz9foGqDfAlI2be0e3yuvJbsYw0PW_WQgqaRgo/pr:article-preview-image/g:ce/rs:auto:0:0:0/L2Ntcy9hbGwtaW1hZ2VzL2U0NGZkZDczLWFjYWQtNGIxZi05ZWU1LTlkMzBkOTc5Y2VkNy5qcGc.webp' },
-                    { name: 'Лосось на грилі', description: '180г, з рисом та соусом теріякі', price: 350.0, calories: 420, imageUrl: 'https://static.tildacdn.com/tild6362-6134-4835-b832-386538323538/1716378.jpg' },
-                    { name: 'Паста Карбонара', description: '350г', price: 210.0, calories: 650, imageUrl: 'https://klopotenko.com/wp-content/uploads/2018/10/Pasta-Karbonara_siteWEb.jpg' }
+                    { name: 'Котлета по-київськи', description: '200г, з картопляним пюре', price: 220.0, calories: 550, allergens: 'Глютен, Яйця, Молочні продукти', imageUrl: 'https://rud.ua/uploads/under_recipe/02_600x300_5f686cb1bd6ca.jpg' },
+                    { name: 'Вареники з картоплею та грибами', description: '250г, зі шкварками та сметаною', price: 130.0, calories: 480, allergens: 'Глютен, Молочні продукти', imageUrl: 'https://tasty1.siteo.xyz/r/o/vareniki-z-kartopleyu-163vq.jpg' },
+                    { name: 'Деруни з м\'ясом', description: '280г, зі сметаною', price: 160.0, calories: 520, allergens: 'Молочні продукти', imageUrl: 'https://static.espreso.tv/uploads/photobank/328000_329000/328338_fried-potato-pancakes_2829-13788_new_960x380_0.webp' },
+                    { name: 'Стейк Рібай', description: '300г, з овочами гриль', price: 450.0, calories: 600, allergens: null, imageUrl: 'https://images.gastronom.ru/mXFaZVz9foGqDfAlI2be0e3yuvJbsYw0PW_WQgqaRgo/pr:article-preview-image/g:ce/rs:auto:0:0:0/L2Ntcy9hbGwtaW1hZ2VzL2U0NGZkZDczLWFjYWQtNGIxZi05ZWU1LTlkMzBkOTc5Y2VkNy5qcGc.webp' },
+                    { name: 'Лосось на грилі', description: '180г, з рисом та соусом теріякі', price: 350.0, calories: 420, allergens: 'Риба, Соя', imageUrl: 'https://static.tildacdn.com/tild6362-6134-4835-b832-386538323538/1716378.jpg' },
+                    { name: 'Паста Карбонара', description: '350г', price: 210.0, calories: 650, allergens: 'Глютен, Яйця, Молочні продукти', imageUrl: 'https://klopotenko.com/wp-content/uploads/2018/10/Pasta-Karbonara_siteWEb.jpg' }
                 ]
             },
             {
                 name: 'Супи',
                 description: 'Традиційні українські супи',
                 dishes: [
-                    { name: 'Борщ Український', description: '350мл, зі сметаною, пампушками та часником', price: 150.0, calories: 320, imageUrl: 'https://images.unian.net/photos/2020_04/thumb_files/1200_0_1588081977-7108.jpg' },
-                    { name: 'Солянка м\'ясна', description: '350мл', price: 170.0, calories: 400, imageUrl: 'https://myastoriya.com.ua/upload/resize_cache/iblock/2a5/1000_800_1/4ormr5v1ub932o99qtyemxhg57wgpxoe.jpg' },
-                    { name: 'Грибний крем-суп', description: '300мл, з грінками', price: 130.0, calories: 280, imageUrl: 'https://www.herbalife.com/dmassets/regional-reusable-assets/emea/images/ri-creamy-mushroom-soup-recipe-emea.jpg' }
+                    { name: 'Борщ Український', description: '350мл, зі сметаною, пампушками та часником', price: 150.0, calories: 320, allergens: 'Молочні продукти, Глютен', imageUrl: 'https://images.unian.net/photos/2020_04/thumb_files/1200_0_1588081977-7108.jpg' },
+                    { name: 'Солянка м\'ясна', description: '350мл', price: 170.0, calories: 400, allergens: 'Молочні продукти', imageUrl: 'https://myastoriya.com.ua/upload/resize_cache/iblock/2a5/1000_800_1/4ormr5v1ub932o99qtyemxhg57wgpxoe.jpg' },
+                    { name: 'Грибний крем-суп', description: '300мл, з грінками', price: 130.0, calories: 280, allergens: 'Глютен, Молочні продукти', imageUrl: 'https://www.herbalife.com/dmassets/regional-reusable-assets/emea/images/ri-creamy-mushroom-soup-recipe-emea.jpg' }
                 ]
             },
             {
                 name: 'Салати',
                 description: 'Свіжі салати з натуральних інгредієнтів',
                 dishes: [
-                    { name: 'Салат Цезар з куркою', description: '250г', price: 180.0, calories: 380, imageUrl: 'https://yapiko.com.ua/media/catalog/product/cache/90c631851bfc82ed3538a672fa9488bb/c/a/caesar_salad_with_chicken_sous_vide.jpg' },
-                    { name: 'Грецький салат', description: '300г', price: 160.0, calories: 300, imageUrl: 'https://smachno.ua/wp-content/uploads/2009/10/03/Depositphotos_7299284_m-2015.jpg' },
-                    { name: 'Салат з телятиною та руколою', description: '220г', price: 230.0, calories: 350, imageUrl: 'https://schedryk.vn.ua/uploads/640ed2823fe3d.jpg' },
-                    { name: 'Салат Олів\'є', description: '250г', price: 140.0, calories: 420, imageUrl: 'https://images.unian.net/photos/2018_12/thumb_files/1200_0_1544783934-3964.jpg' }
+                    { name: 'Салат Цезар з куркою', description: '250г', price: 180.0, calories: 380, allergens: 'Яйця, Молочні продукти', imageUrl: 'https://yapiko.com.ua/media/catalog/product/cache/90c631851bfc82ed3538a672fa9488bb/c/a/caesar_salad_with_chicken_sous_vide.jpg' },
+                    { name: 'Грецький салат', description: '300г', price: 160.0, calories: 300, allergens: 'Молочні продукти', imageUrl: 'https://smachno.ua/wp-content/uploads/2009/10/03/Depositphotos_7299284_m-2015.jpg' },
+                    { name: 'Салат з телятиною та руколою', description: '220г', price: 230.0, calories: 350, allergens: null, imageUrl: 'https://schedryk.vn.ua/uploads/640ed2823fe3d.jpg' },
+                    { name: 'Салат Олів\'є', description: '250г', price: 140.0, calories: 420, allergens: 'Яйця, Молочні продукти', imageUrl: 'https://images.unian.net/photos/2018_12/thumb_files/1200_0_1544783934-3964.jpg' }
                 ]
             },
             {
                 name: 'Десерти',
                 description: 'Солодощі та десерти',
                 dishes: [
-                    { name: 'Наполеон', description: '150г', price: 90.0, calories: 500, imageUrl: 'https://www.novavizia.com/wp-content/uploads/napoleon-za-kompetentnostta.jpg' },
-                    { name: 'Чізкейк Нью-Йорк', description: '140г', price: 110.0, calories: 480, imageUrl: 'https://la-torta.ua/content/uploads/images/12-cake.jpg' },
-                    { name: 'Шоколадний фондан', description: '120г, з кулькою морозива', price: 130.0, calories: 550, imageUrl: 'https://images.unian.net/photos/2020_12/thumb_files/1200_0_1608796072-3763.jpg' },
-                    { name: 'Тирамісу', description: '130г', price: 120.0, calories: 450, imageUrl: 'https://lasunka.com/s165-prew.jpg' }
+                    { name: 'Наполеон', description: '150г', price: 90.0, calories: 500, allergens: 'Глютен, Яйця, Молочні продукти', imageUrl: 'https://www.novavizia.com/wp-content/uploads/napoleon-za-kompetentnostta.jpg' },
+                    { name: 'Чізкейк Нью-Йорк', description: '140г', price: 110.0, calories: 480, allergens: 'Яйця, Молочні продукти, Глютен', imageUrl: 'https://la-torta.ua/content/uploads/images/12-cake.jpg' },
+                    { name: 'Шоколадний фондан', description: '120г, з кулькою морозива', price: 130.0, calories: 550, allergens: 'Глютен, Яйця, Молочні продукти', imageUrl: 'https://images.unian.net/photos/2020_12/thumb_files/1200_0_1608796072-3763.jpg' },
+                    { name: 'Тирамісу', description: '130г', price: 120.0, calories: 450, allergens: 'Яйця, Молочні продукти, Глютен', imageUrl: 'https://lasunka.com/s165-prew.jpg' }
                 ]
             }
         ]
@@ -108,36 +109,36 @@ const nazvaMenuStructure = [
     {
         name: 'Напої',
         description: 'Безалкогольні напої та прохолоджувальні напої',
-        type: MainCategoryType.DRINKS,
+        type: CategoryType.DRINKS,
         subcategories: [
             {
                 name: 'Кава',
                 description: 'Різноманітні види кави',
                 dishes: [
-                    { name: 'Кава "По домашньому"', description: 'Особливий рецепт', price: 80.0, calories: 120, imageUrl: 'https://images.prom.ua/4708817402_w1280_h640_4708817402.jpg' },
-                    { name: 'Еспресо', description: '30мл', price: 50.0, calories: 5, imageUrl: 'https://westcupgroup.com/wp-content/uploads/2020/06/1_4FzJWow3qJOV_O-3iKgBOw.jpeg' },
-                    { name: 'Американо', description: '150мл', price: 55.0, calories: 10, imageUrl: 'https://delonghi-shop.by/upload/file/-/stati/americano_kofe_(1).jpg' },
-                    { name: 'Капучино', description: '200мл', price: 65.0, calories: 120, imageUrl: 'https://static.tildacdn.com/tild6333-3739-4834-a663-303339653030/photo.png' },
-                    { name: 'Лате', description: '250мл', price: 70.0, calories: 150, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-76R7O1chQfHoeMZFwjt8dNoFkjXAdAuodg&s' }
+                    { name: 'Кава "По домашньому"', description: 'Особливий рецепт', price: 80.0, calories: 120, allergens: 'Молочні продукти', imageUrl: 'https://images.prom.ua/4708817402_w1280_h640_4708817402.jpg' },
+                    { name: 'Еспресо', description: '30мл', price: 50.0, calories: 5, allergens: null, imageUrl: 'https://westcupgroup.com/wp-content/uploads/2020/06/1_4FzJWow3qJOV_O-3iKgBOw.jpeg' },
+                    { name: 'Американо', description: '150мл', price: 55.0, calories: 10, allergens: null, imageUrl: 'https://delonghi-shop.by/upload/file/-/stati/americano_kofe_(1).jpg' },
+                    { name: 'Капучино', description: '200мл', price: 65.0, calories: 120, allergens: 'Молочні продукти', imageUrl: 'https://static.tildacdn.com/tild6333-3739-4834-a663-303339653030/photo.png' },
+                    { name: 'Лате', description: '250мл', price: 70.0, calories: 150, allergens: 'Молочні продукти', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-76R7O1chQfHoeMZFwjt8dNoFkjXAdAuodg&s' }
                 ]
             },
             {
                 name: 'Чай',
                 description: 'Традиційні та фруктові чаї',
                 dishes: [
-                    { name: 'Чай чорний', description: '400мл', price: 50.0, calories: 0, imageUrl: 'https://i.pinimg.com/736x/6e/55/5c/6e555c660fa1e3694c7571848c6b10b2.jpg' },
-                    { name: 'Чай зелений', description: '400мл', price: 50.0, calories: 0, imageUrl: 'https://i.pinimg.com/736x/51/13/5f/51135f64443cb1d6df758ba58b351bb0.jpg' },
-                    { name: 'Чай фруктовий', description: '400мл', price: 60.0, calories: 10, imageUrl: 'https://i.pinimg.com/736x/4e/68/06/4e680652321a87187f068e62b65b627a.jpg' }
+                    { name: 'Чай чорний', description: '400мл', price: 50.0, calories: 0, allergens: null, imageUrl: 'https://i.pinimg.com/736x/6e/55/5c/6e555c660fa1e3694c7571848c6b10b2.jpg' },
+                    { name: 'Чай зелений', description: '400мл', price: 50.0, calories: 0, allergens: null, imageUrl: 'https://i.pinimg.com/736x/51/13/5f/51135f64443cb1d6df758ba58b351bb0.jpg' },
+                    { name: 'Чай фруктовий', description: '400мл', price: 60.0, calories: 10, allergens: null, imageUrl: 'https://i.pinimg.com/736x/4e/68/06/4e680652321a87187f068e62b65b627a.jpg' }
                 ]
             },
             {
                 name: 'Безалкогольні напої',
                 description: 'Прохолодні безалкогольні напої',
                 dishes: [
-                    { name: 'Лимонад класичний', description: '300мл', price: 60.0, calories: 100, imageUrl: 'https://i.pinimg.com/1200x/96/4a/5b/964a5bb357736ed3d41211fd9715af0b.jpg' },
-                    { name: 'Мохіто б/а', description: '350мл', price: 80.0, calories: 120, imageUrl: 'https://images.unian.net/photos/2021_06/thumb_files/1200_0_1625047238-4569.jpg' },
-                    { name: 'Сік апельсиновий фреш', description: '250мл', price: 75.0, calories: 110, imageUrl: 'https://shuba.life/static/content/thumbs/1200x630/8/71/wwppvh---c2000x1050x0sx282s-up--a33f6e7440547f23e5404a750c59c718.jpg' },
-                    { name: 'Coca-Cola', description: '330мл', price: 45.0, calories: 140, imageUrl: 'https://www.cocacolaep.com/assets/RY_CC_TSP231115-182__FocusFillMaxWyIwLjAwIiwiMC4wMCIsOTQ4LDcxNF0.jpg' }
+                    { name: 'Лимонад класичний', description: '300мл', price: 60.0, calories: 100, allergens: null, imageUrl: 'https://i.pinimg.com/1200x/96/4a/5b/964a5bb357736ed3d41211fd9715af0b.jpg' },
+                    { name: 'Мохіто б/а', description: '350мл', price: 80.0, calories: 120, allergens: null, imageUrl: 'https://images.unian.net/photos/2021_06/thumb_files/1200_0_1625047238-4569.jpg' },
+                    { name: 'Сік апельсиновий фреш', description: '250мл', price: 75.0, calories: 110, allergens: null, imageUrl: 'https://shuba.life/static/content/thumbs/1200x630/8/71/wwppvh---c2000x1050x0sx282s-up--a33f6e7440547f23e5404a750c59c718.jpg' },
+                    { name: 'Coca-Cola', description: '330мл', price: 45.0, calories: 140, allergens: null, imageUrl: 'https://www.cocacolaep.com/assets/RY_CC_TSP231115-182__FocusFillMaxWyIwLjAwIiwiMC4wMCIsOTQ4LDcxNF0.jpg' }
                 ]
             }
         ]
@@ -145,15 +146,15 @@ const nazvaMenuStructure = [
     {
         name: 'Алкоголь',
         description: 'Алкогольні напої та коктейлі',
-        type: MainCategoryType.ALCOHOL,
+        type: CategoryType.ALCOHOL,
         subcategories: [
             {
                 name: 'Алкогольні напої',
                 description: 'Пиво, вино та коктейлі',
                 dishes: [
-                    { name: 'Пиво світле "NAZVA"', description: '0.5л', price: 80.0, calories: 200, imageUrl: 'https://i.pinimg.com/736x/db/0f/ba/db0fba6d0b1617c089fd298082831703.jpg' },
-                    { name: 'Вино червоне сухе', description: '150мл', price: 120.0, calories: 125, imageUrl: 'https://i.pinimg.com/736x/a1/fc/e5/a1fce538e8c5278d5dee7df4e03182f2.jpg' },
-                    { name: 'Коктейль "Мохіто"', description: '300мл', price: 160.0, calories: 180, imageUrl: 'https://simplewine.ru/upload/iblock/ebc/ebc238796294c3e554a42eded7d49d83.jpg' }
+                    { name: 'Пиво світле "NAZVA"', description: '0.5л', price: 80.0, calories: 200, allergens: 'Глютен', imageUrl: 'https://i.pinimg.com/736x/db/0f/ba/db0fba6d0b1617c089fd298082831703.jpg' },
+                    { name: 'Вино червоне сухе', description: '150мл', price: 120.0, calories: 125, allergens: null, imageUrl: 'https://i.pinimg.com/736x/a1/fc/e5/a1fce538e8c5278d5dee7df4e03182f2.jpg' },
+                    { name: 'Коктейль "Мохіто"', description: '300мл', price: 160.0, calories: 180, allergens: null, imageUrl: 'https://simplewine.ru/upload/iblock/ebc/ebc238796294c3e554a42eded7d49d83.jpg' }
                 ]
             }
         ]
@@ -161,14 +162,14 @@ const nazvaMenuStructure = [
     {
         name: 'Мерч',
         description: 'Сувеніри та мерч ресторану',
-        type: MainCategoryType.MERCH,
+        type: CategoryType.MERCH,
         subcategories: [
             {
                 name: 'Сувеніри',
                 description: 'Пам\'ятні речі від ресторану NAZVA',
                 dishes: [
-                    { name: 'Футболка NAZVA', description: 'Бавовняна футболка з логотипом', price: 350.0, calories: 0, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfk5Ob-DSQI85VhJvKK4Nye0XDSsNwDA2j3w&s' },
-                    { name: 'Кружка NAZVA', description: 'Керамічна кружка з дизайном', price: 120.0, calories: 0, imageUrl: 'https://s13emagst.akamaized.net/products/93890/93889975/images/res_6ea71d52c3dd8313589a4a114aa78bed.jpg?width=720&height=720&hash=4971A70E9AB45F4759AF5AF5121AFD85' }
+                    { name: 'Футболка NAZVA', description: 'Бавовняна футболка з логотипом', price: 350.0, calories: null, allergens: null, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRfk5Ob-DSQI85VhJvKK4Nye0XDSsNwDA2j3w&s' },
+                    { name: 'Кружка NAZVA', description: 'Керамічна кружка з дизайном', price: 120.0, calories: null, allergens: null, imageUrl: 'https://s13emagst.akamaized.net/products/93890/93889975/images/res_6ea71d52c3dd8313589a4a114aa78bed.jpg?width=720&height=720&hash=4971A70E9AB45F4759AF5AF5121AFD85' }
                 ]
             }
         ]
@@ -183,35 +184,35 @@ const baboGardenMenuStructure = [
     {
         name: 'Їжа',
         description: 'Вишукана європейська кухня преміум класу',
-        type: MainCategoryType.FOOD,
+        type: CategoryType.KITCHEN,
         subcategories: [
             {
                 name: 'Основні страви',
                 description: 'Шедеври шеф-кухаря з преміум інгредієнтів',
                 dishes: [
-                    { name: 'Фуа-гра з трюфелями', description: 'Печінка гуски з чорним трюфелем, 150г', price: 850.0, calories: 450, imageUrl: 'https://cdn.vkusnoo.com.ua/images/14197/14197-592_5225c5740225a-600x408.jpg' },
-                    { name: 'Теляча вирізка Велінгтон', description: 'З печерицями та шпинатом, 200г', price: 720.0, calories: 520, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj8u8uO1O6Kdptl5ttD9VX37ppvehC4Y8gTg&s' },
-                    { name: 'Чорна тріска з морепродуктами', description: 'З лангустинами та ікрою, 180г', price: 680.0, calories: 380, imageUrl: 'https://eeu.alaskaseafood.org/wp-content/uploads/2020/04/ALASKA-SABLEFISH-MARINATED-WITH-ACACIA-HONEY.jpg' },
-                    { name: 'Ягняча корейка', description: 'З овочами гриль та мятним соусом, 220г', price: 650.0, calories: 480, imageUrl: 'https://myasnuyray.com.ua/wp-content/uploads/2020/04/1-04-20-3-4.jpg' },
-                    { name: 'Бургер з вагю', description: 'Преміум яловичина, чорний трюфель, 280г', price: 420.0, calories: 650, imageUrl: 'https://bdaily.ru/wp-content/uploads/2024/07/FARSH_%D0%92%D0%B0%D0%B3%D1%8E-scaled.jpg' }
+                    { name: 'Фуа-гра з трюфелями', description: 'Печінка гуски з чорним трюфелем, 150г', price: 850.0, calories: 450, allergens: null, imageUrl: 'https://cdn.vkusnoo.com.ua/images/14197/14197-592_5225c5740225a-600x408.jpg' },
+                    { name: 'Теляча вирізка Велінгтон', description: 'З печерицями та шпинатом, 200г', price: 720.0, calories: 520, allergens: 'Глютен, Яйця, Молочні продукти', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRj8u8uO1O6Kdptl5ttD9VX37ppvehC4Y8gTg&s' },
+                    { name: 'Чорна тріска з морепродуктами', description: 'З лангустинами та ікрою, 180г', price: 680.0, calories: 380, allergens: 'Риба, Морепродукти', imageUrl: 'https://eeu.alaskaseafood.org/wp-content/uploads/2020/04/ALASKA-SABLEFISH-MARINATED-WITH-ACACIA-HONEY.jpg' },
+                    { name: 'Ягняча корейка', description: 'З овочами гриль та мятним соусом, 220г', price: 650.0, calories: 480, allergens: null, imageUrl: 'https://myasnuyray.com.ua/wp-content/uploads/2020/04/1-04-20-3-4.jpg' },
+                    { name: 'Бургер з вагю', description: 'Преміум яловичина, чорний трюфель, 280г', price: 420.0, calories: 650, allergens: 'Глютен, Яйця', imageUrl: 'https://bdaily.ru/wp-content/uploads/2024/07/FARSH_%D0%92%D0%B0%D0%B3%D1%8E-scaled.jpg' }
                 ]
             },
             {
                 name: 'Салати',
                 description: 'Свіжі салати з органічних інгредієнтів',
                 dishes: [
-                    { name: 'Салат з молодими паростками', description: 'З медом, горіхами та сиром рікота, 180г', price: 280.0, calories: 320, imageUrl: 'https://images.unian.net/photos/2023_06/thumb_files/1200_0_1686566194-6619.jpg' },
-                    { name: 'Цезар з телятиною', description: 'Маринована телятина, пармезан, 220г', price: 320.0, calories: 380, imageUrl: 'https://images.unian.net/photos/2019_02/thumb_files/620_324_1551364909-4775.jpg?1' },
-                    { name: 'Грецький салат з авокадо', description: 'Органічні овочі, фета, 250г', price: 260.0, calories: 290, imageUrl: 'https://static.apostrophe.ua/uploads/image/2b9a0884064689fdf914d5ed3a6c20e3.jpg' }
+                    { name: 'Салат з молодими паростками', description: 'З медом, горіхами та сиром рікота, 180г', price: 280.0, calories: 320, allergens: 'Горіхи, Молочні продукти', imageUrl: 'https://images.unian.net/photos/2023_06/thumb_files/1200_0_1686566194-6619.jpg' },
+                    { name: 'Цезар з телятиною', description: 'Маринована телятина, пармезан, 220г', price: 320.0, calories: 380, allergens: 'Яйця, Молочні продукти', imageUrl: 'https://images.unian.net/photos/2019_02/thumb_files/620_324_1551364909-4775.jpg?1' },
+                    { name: 'Грецький салат з авокадо', description: 'Органічні овочі, фета, 250г', price: 260.0, calories: 290, allergens: 'Молочні продукти', imageUrl: 'https://static.apostrophe.ua/uploads/image/2b9a0884064689fdf914d5ed3a6c20e3.jpg' }
                 ]
             },
             {
                 name: 'Десерти',
                 description: 'Шоколадні шедеври та десерти ручної роботи',
                 dishes: [
-                    { name: 'Шоколадний фондан з лавою', description: '70% какао, малина, кулька морозива', price: 220.0, calories: 480, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNmTovZVWhbNE81hm6U3JPf42w-X38Rqh33A&s' },
-                    { name: 'Крем-брюле ванільний', description: 'З сезонними ягодами', price: 180.0, calories: 350, imageUrl: 'https://fayni-recepty.com.ua/wp-content/uploads/2021/04/creme-brulee.jpg' },
-                    { name: 'Панна котта з чорницею', description: 'Італійський десерт з ягідним соусом', price: 160.0, calories: 280, imageUrl: 'https://ekava.com.ua/image/catalog/products/torti-dlya-horeca/panna-kotta-z-chorniceyu-2432.jpg' }
+                    { name: 'Шоколадний фондан з лавою', description: '70% какао, малина, кулька морозива', price: 220.0, calories: 480, allergens: 'Глютен, Яйця, Молочні продукти', imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRNmTovZVWhbNE81hm6U3JPf42w-X38Rqh33A&s' },
+                    { name: 'Крем-брюле ванільний', description: 'З сезонними ягодами', price: 180.0, calories: 350, allergens: 'Яйця, Молочні продукти', imageUrl: 'https://fayni-recepty.com.ua/wp-content/uploads/2021/04/creme-brulee.jpg' },
+                    { name: 'Панна котта з чорницею', description: 'Італійський десерт з ягідним соусом', price: 160.0, calories: 280, allergens: 'Молочні продукти', imageUrl: 'https://ekava.com.ua/image/catalog/products/torti-dlya-horeca/panna-kotta-z-chorniceyu-2432.jpg' }
                 ]
             }
         ]
@@ -219,24 +220,24 @@ const baboGardenMenuStructure = [
     {
         name: 'Напої',
         description: 'Колекція вин та коктейлів преміум класу',
-        type: MainCategoryType.DRINKS,
+        type: CategoryType.DRINKS,
         subcategories: [
             {
                 name: 'Вина',
                 description: 'Колекція елітних вин з усього світу',
                 dishes: [
-                    { name: 'Chateau Lafite Rothschild 2009', description: 'Франція, Бордо, 150мл', price: 2500.0, calories: 125, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLqg2d5XeFUcl4aJSO6ayBmeJhzhPhpNuZDA&s' },
-                    { name: 'Opus One 2018', description: 'США, Каліфорнія, Каберне Совіньйон, 150мл', price: 1800.0, calories: 130, imageUrl: 'https://en.opusonewinery.com/wp-content/uploads/2022/03/OpusOne2018_Domestic_2.jpg' },
-                    { name: 'Dom Perignon 2012', description: 'Франція, Шампань, 150мл', price: 2200.0, calories: 135, imageUrl: 'https://res.cloudinary.com/winecom/image/upload/leimliumifmzicv5wf7h' }
+                    { name: 'Chateau Lafite Rothschild 2009', description: 'Франція, Бордо, 150мл', price: 2500.0, calories: 125, allergens: null, imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLqg2d5XeFUcl4aJSO6ayBmeJhzhPhpNuZDA&s' },
+                    { name: 'Opus One 2018', description: 'США, Каліфорнія, Каберне Совіньйон, 150мл', price: 1800.0, calories: 130, allergens: null, imageUrl: 'https://en.opusonewinery.com/wp-content/uploads/2022/03/OpusOne2018_Domestic_2.jpg' },
+                    { name: 'Dom Perignon 2012', description: 'Франція, Шампань, 150мл', price: 2200.0, calories: 135, allergens: null, imageUrl: 'https://res.cloudinary.com/winecom/image/upload/leimliumifmzicv5wf7h' }
                 ]
             },
             {
                 name: 'Коктейлі',
                 description: 'Авторські коктейлі від нашого бармена',
                 dishes: [
-                    { name: 'Old Fashioned', description: 'Бурбон, цукор, ангостура, 200мл', price: 280.0, calories: 220, imageUrl: 'https://www.allrecipes.com/thmb/DQIEfVzC7KndUnnHJbmB44a0u3Y=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/221320-old-fashioned-cocktail-ddmfs-3X4-13181414-bf1365252476463b9650096c28b5acfd.jpg' },
-                    { name: 'Negroni', description: 'Джин, вермут, кампарі, 180мл', price: 260.0, calories: 180, imageUrl: 'https://assets.tmecosys.com/image/upload/t_web_rdp_recipe_584x480_1_5x/img/recipe/ras/Assets/1D4CCB7D-D830-4ED3-9535-875D10CFC801/Derivates/DAD3AE52-E326-4309-90BA-10F6BEEB1EC7.jpg' },
-                    { name: 'French 75', description: 'Джин, лимон, цукор, шампанське, 200мл', price: 320.0, calories: 190, imageUrl: 'https://spirits-navigator.com/wp-content/uploads/2024/06/French75_02.jpg' }
+                    { name: 'Old Fashioned', description: 'Бурбон, цукор, ангостура, 200мл', price: 280.0, calories: 220, allergens: 'Цукор', imageUrl: 'https://www.allrecipes.com/thmb/DQIEfVzC7KndUnnHJbmB44a0u3Y=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/221320-old-fashioned-cocktail-ddmfs-3X4-13181414-bf1365252476463b9650096c28b5acfd.jpg' },
+                    { name: 'Negroni', description: 'Джин, вермут, кампарі, 180мл', price: 260.0, calories: 180, allergens: null, imageUrl: 'https://assets.tmecosys.com/image/upload/t_web_rdp_recipe_584x480_1_5x/img/recipe/ras/Assets/1D4CCB7D-D830-4ED3-9535-875D10CFC801/Derivates/DAD3AE52-E326-4309-90BA-10F6BEEB1EC7.jpg' },
+                    { name: 'French 75', description: 'Джин, лимон, цукор, шампанське, 200мл', price: 320.0, calories: 190, allergens: 'Цукор', imageUrl: 'https://spirits-navigator.com/wp-content/uploads/2024/06/French75_02.jpg' }
                 ]
             }
         ]
@@ -244,14 +245,14 @@ const baboGardenMenuStructure = [
     {
         name: 'Алкоголь',
         description: 'Преміум алкогольні напої',
-        type: MainCategoryType.ALCOHOL,
+        type: CategoryType.ALCOHOL,
         subcategories: [
             {
                 name: 'Віскі',
                 description: 'Колекція рідкісних віскі',
                 dishes: [
-                    { name: 'Macallan 18yo', description: 'Шотландія, спейсайд, 50мл', price: 450.0, calories: 140, imageUrl: 'https://brand-assets.edrington.com/transform/dde8619f-4e19-4f41-9e98-b5e55db3816b/MAC-2023-SignatureTaste-Sherry-Oak-18YO-HighRes-WEB-initial?quality=100&io=transform%3Afill%2Cwidth%3A575%2Cheight%3A551' },
-                    { name: 'Glenfiddich 21yo', description: 'Шотландія, спейсайд, 50мл', price: 380.0, calories: 135, imageUrl: 'https://henrysliquorhouse.com/cdn/shop/files/glenfiddichserving-Max-Quality.jpg?v=1737601139&width=1445' }
+                    { name: 'Macallan 18yo', description: 'Шотландія, спейсайд, 50мл', price: 450.0, calories: 140, allergens: null, imageUrl: 'https://brand-assets.edrington.com/transform/dde8619f-4e19-4f41-9e98-b5e55db3816b/MAC-2023-SignatureTaste-Sherry-Oak-18YO-HighRes-WEB-initial?quality=100&io=transform%3Afill%2Cwidth%3A575%2Cheight%3A551' },
+                    { name: 'Glenfiddich 21yo', description: 'Шотландія, спейсайд, 50мл', price: 380.0, calories: 135, allergens: null, imageUrl: 'https://henrysliquorhouse.com/cdn/shop/files/glenfiddichserving-Max-Quality.jpg?v=1737601139&width=1445' }
                 ]
             }
         ]
@@ -266,29 +267,29 @@ const pstrugMenuStructure = [
     {
         name: 'Їжа',
         description: 'Свіжа форель та інші морепродукти',
-        type: MainCategoryType.FOOD,
+        type: CategoryType.KITCHEN,
         subcategories: [
             {
                 name: 'Риба та морепродукти',
                 description: 'Свіжа форель та інші морепродукти',
                 dishes: [
-                    { name: 'Стейк форелі на грилі', description: '220г, з овочами та лимоном', price: 280.0, calories: 320, imageUrl: 'https://karelian-fish.ru/shop/tpost/180ileuyh1-retsept-prigotovleniya-steika-foreli-na' },
-                    { name: 'Форель запечена', description: '250г, з травами та маслом', price: 260.0, calories: 340, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063107.jpg?t=0' },
-                    { name: 'Форель копчена', description: '180г, холодного копчення', price: 240.0, calories: 280, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063106.jpg?t=0' },
-                    { name: 'Форель в клярі', description: '200г, з тар-tar соусом', price: 220.0, calories: 380, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1285407.jpg?t=0' },
-                    { name: 'Креветки на грилі', description: '300г, з часником та маслом', price: 320.0, calories: 220, imageUrl: 'https://bbq24.com.ua/image/catalog/%D0%B1%D0%BB%D0%BE%D0%B3/%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B8%20%D0%BD%D0%B0%20%D0%B3%D1%80%D0%B8%D0%BB%D0%B5-min.jpg' },
-                    { name: 'Мідії в вині', description: '400г, біле вино, часник', price: 260.0, calories: 180, imageUrl: 'https://gastropubfather.com/image/cache/catalog/photo_2023-03-04_18-44-17-500x500.jpg' },
-                    { name: 'Дорадо на грилі', description: '280г, з овочами', price: 240.0, calories: 260, imageUrl: 'https://assets.dots.live/misteram-public/018f6310-a96f-71d1-b993-cfd2e1d8f29b-826x0.png' }
+                    { name: 'Стейк форелі на грилі', description: '220г, з овочами та лимоном', price: 280.0, calories: 320, allergens: 'Риба', imageUrl: 'https://karelian-fish.ru/shop/tpost/180ileuyh1-retsept-prigotovleniya-steika-foreli-na' },
+                    { name: 'Форель запечена', description: '250г, з травами та маслом', price: 260.0, calories: 340, allergens: 'Риба, Молочні продукти', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063107.jpg?t=0' },
+                    { name: 'Форель копчена', description: '180г, холодного копчення', price: 240.0, calories: 280, allergens: 'Риба', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063106.jpg?t=0' },
+                    { name: 'Форель в клярі', description: '200г, з тар-tar соусом', price: 220.0, calories: 380, allergens: 'Риба, Глютен, Яйця', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1285407.jpg?t=0' },
+                    { name: 'Креветки на грилі', description: '300г, з часником та маслом', price: 320.0, calories: 220, allergens: 'Морепродукти, Молочні продукти', imageUrl: 'https://bbq24.com.ua/image/catalog/%D0%B1%D0%BB%D0%BE%D0%B3/%D0%BA%D1%80%D0%B5%D0%B2%D0%B5%D1%82%D0%BA%D0%B8%20%D0%BD%D0%B0%20%D0%B3%D1%80%D0%B8%D0%BB%D0%B5-min.jpg' },
+                    { name: 'Мідії в вині', description: '400г, біле вино, часник', price: 260.0, calories: 180, allergens: 'Морепродукти', imageUrl: 'https://gastropubfather.com/image/cache/catalog/photo_2023-03-04_18-44-17-500x500.jpg' },
+                    { name: 'Дорадо на грилі', description: '280г, з овочами', price: 240.0, calories: 260, allergens: 'Риба', imageUrl: 'https://assets.dots.live/misteram-public/018f6310-a96f-71d1-b993-cfd2e1d8f29b-826x0.png' }
                 ]
             },
             {
                 name: 'Багети та намазки',
                 description: 'Свіжі багети з різними намазками',
                 dishes: [
-                    { name: 'Багет з лососем', description: '180г, крем-чиз, червона ікра', price: 180.0, calories: 320, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1361262.jpg?t=1754226844997' },
-                    { name: 'Багет з авокадо', description: '170г, пармська шинка, рукола', price: 160.0, calories: 290, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063118.jpg?t=0' },
-                    { name: 'Багет з паштетом', description: '175г, печінковий паштет, цибуля', price: 140.0, calories: 340, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063121.jpg?t=0' },
-                    { name: 'Багет з сиром', description: '165г, камамбер, мед, горіхи', price: 170.0, calories: 310, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063122.jpg?t=0' }
+                    { name: 'Багет з лососем', description: '180г, крем-чиз, червона ікра', price: 180.0, calories: 320, allergens: 'Глютен, Риба, Молочні продукти', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1361262.jpg?t=1754226844997' },
+                    { name: 'Багет з авокадо', description: '170г, пармська шинка, рукола', price: 160.0, calories: 290, allergens: 'Глютен', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063118.jpg?t=0' },
+                    { name: 'Багет з паштетом', description: '175г, печінковий паштет, цибуля', price: 140.0, calories: 340, allergens: 'Глютен', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063121.jpg?t=0' },
+                    { name: 'Багет з сиром', description: '165г, камамбер, мед, горіхи', price: 170.0, calories: 310, allergens: 'Глютен, Молочні продукти, Горіхи', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1063122.jpg?t=0' }
                 ]
             }
         ]
@@ -296,15 +297,15 @@ const pstrugMenuStructure = [
     {
         name: 'Напої',
         description: 'Вино та прохолодні напої',
-        type: MainCategoryType.DRINKS,
+        type: CategoryType.DRINKS,
         subcategories: [
             {
                 name: 'Вино',
                 description: 'Колекція вин для поціновувачів',
                 dishes: [
-                    { name: 'Шардоне біле сухе', description: '150мл, Франція', price: 180.0, calories: 120, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1372567.jpg?t=1756048890390' },
-                    { name: 'Мерло червоне сухе', description: '150мл, Італія', price: 170.0, calories: 125, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1280995.jpg?t=0' },
-                    { name: 'Рислінг напівсолодкий', description: '150мл, Німеччина', price: 190.0, calories: 135, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1280995.jpg?t=0' }
+                    { name: 'Шардоне біле сухе', description: '150мл, Франція', price: 180.0, calories: 120, allergens: null, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1372567.jpg?t=1756048890390' },
+                    { name: 'Мерло червоне сухе', description: '150мл, Італія', price: 170.0, calories: 125, allergens: null, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1280995.jpg?t=0' },
+                    { name: 'Рислінг напівсолодкий', description: '150мл, Німеччина', price: 190.0, calories: 135, allergens: 'Цукор', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1280995.jpg?t=0' }
                 ]
             }
         ]
@@ -312,15 +313,15 @@ const pstrugMenuStructure = [
     {
         name: 'Пиво',
         description: 'Крафтове та традиційне пиво',
-        type: MainCategoryType.ALCOHOL,
+        type: CategoryType.ALCOHOL,
         subcategories: [
             {
                 name: 'Крафтове пиво',
                 description: 'Авторське крафтове пиво',
                 dishes: [
-                    { name: 'IPA "Рибальський ель"', description: '0.5л, гіркий хмель', price: 85.0, calories: 250, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1057381.jpg?t=0' },
-                    { name: 'Stout "Чорна риба"', description: '0.5л, шоколадний смак', price: 90.0, calories: 240, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1127067.jpg?t=0' },
-                    { name: 'Wheat "Біла хвиля"', description: '0.5л, пшеничне пиво', price: 80.0, calories: 220, imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1057379.jpg?t=0' }
+                    { name: 'IPA "Рибальський ель"', description: '0.5л, гіркий хмель', price: 85.0, calories: 250, allergens: 'Глютен', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1057381.jpg?t=0' },
+                    { name: 'Stout "Чорна риба"', description: '0.5л, шоколадний смак', price: 90.0, calories: 240, allergens: 'Глютен', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1127067.jpg?t=0' },
+                    { name: 'Wheat "Біла хвиля"', description: '0.5л, пшеничне пиво', price: 80.0, calories: 220, allergens: 'Глютен', imageUrl: 'https://static.shaketopay.com.ua/menu-prod/dish-1057379.jpg?t=0' }
                 ]
             },
         ]
@@ -335,7 +336,7 @@ const sicilyMenuStructure = [
     {
         name: 'Їжа',
         description: 'Італійська кухня та сніданки',
-        type: MainCategoryType.FOOD,
+        type: CategoryType.KITCHEN,
         subcategories: [
             {
                 name: 'Континентальні сніданки',
@@ -381,7 +382,7 @@ const sicilyMenuStructure = [
     {
         name: 'Напої',
         description: 'Коктейлі та прохолодні напої',
-        type: MainCategoryType.DRINKS,
+        type: CategoryType.DRINKS,
         subcategories: [
             {
                 name: 'Класичні коктейлі',
@@ -413,7 +414,7 @@ const cheeseBakeryMenuStructure = [
     {
         name: 'Їжа',
         description: 'Випічка, сирники та сніданки',
-        type: MainCategoryType.FOOD,
+        type: CategoryType.KITCHEN,
         subcategories: [
             {
                 name: 'Сирники',
@@ -447,7 +448,7 @@ const cheeseBakeryMenuStructure = [
     {
         name: 'Сніданки',
         description: 'Комбо сніданки та ранкова кухня',
-        type: MainCategoryType.FOOD,
+        type: CategoryType.KITCHEN,
         subcategories: [
             {
                 name: 'Комбо сніданки',
@@ -487,7 +488,7 @@ const cheeseBakeryMenuStructure = [
     {
         name: 'Напої',
         description: 'Кава та гарячі напої',
-        type: MainCategoryType.DRINKS,
+        type: CategoryType.DRINKS,
         subcategories: [
             {
                 name: 'Спеціальна кава',

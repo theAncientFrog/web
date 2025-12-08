@@ -90,7 +90,7 @@ export default function ManageRestaurantsPage() {
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">
                     <header className="flex justify-between items-center mb-8 pb-6 border-b border-gray-200 flex-wrap gap-4">
                         <div className="manageHeaderTitle">
-                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">MANAGER MODE</h1>
+                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">Breadcrumb</h1>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="flex items-center gap-2 text-sm text-gray-700">

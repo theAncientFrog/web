@@ -11,6 +11,7 @@ import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Settings, ArrowLeft, Utensils, Coffee, Wine, Package, User } from 'lucide-react';
 import ProfileModal from '../../components/ProfileModal';
+import MenuSettingsModal from '../../components/MenuSettingsModal';
 import Footer from '../../components/Footer';
 
 // Мапування іконок для категорій
@@ -36,6 +37,7 @@ const getIconForCategory = (categoryName) => {
 
 export default function MenuPage() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [restaurant, setRestaurant] = useState(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [categories, setCategories] = useState([]);
@@ -147,6 +149,10 @@ export default function MenuPage() {
                 isOpen={isProfileOpen}
                 onClose={() => setIsProfileOpen(false)}
             />
+            <MenuSettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
 
             <main className="w-full min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 justify-start">
 
@@ -162,12 +168,19 @@ export default function MenuPage() {
 
                     {/* Накладання іконок */}
                     <div className="absolute inset-x-0 top-0 p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/30 to-transparent w-full max-w-[1600px] mx-auto">
-                        <Link href={'/partners'}><button className="bg-white/80 text-gray-800 rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-xl cursor-pointer transition backdrop-blur-sm shadow-md hover:bg-white/95 font-bold">
+                        <button 
+                            onClick={() => router.back()}
+                            className="bg-white/80 text-gray-800 rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-xl cursor-pointer transition backdrop-blur-sm shadow-md hover:bg-white/95 font-bold"
+                        >
                             <ArrowLeft size={24} />
-                        </button></Link>
+                        </button>
 
                         <div className="flex gap-3">
-                            <button className="bg-white/80 text-gray-800 rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-xl cursor-pointer transition backdrop-blur-sm shadow-md hover:bg-white/95">
+                            <button 
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="bg-white/80 text-gray-800 rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-xl cursor-pointer transition backdrop-blur-sm shadow-md hover:bg-white/95"
+                                title="Налаштування меню"
+                            >
                                 <Settings size={20} />
                             </button>
                             <button onClick={() => setIsProfileOpen(true)} className="bg-white/80 text-gray-800 rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-lg sm:text-xl cursor-pointer transition backdrop-blur-sm shadow-md hover:bg-white/95 overflow-hidden">
@@ -221,27 +234,27 @@ export default function MenuPage() {
                 {/* --- 3. СПИСОК КАТЕГОРІЙ МЕНЮ (ДИНАМІЧНІ КНОПКИ) --- */}
                 <div className="w-full mx-auto max-w-[1600px] flex-grow flex flex-col pt-8 px-4 lg:px-8">
                     {categories.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                             {categories.map((category) => {
-                                const Icon = category.icon;
+                            const Icon = category.icon;
 
-                                return (
-                                    <Link
-                                        key={category.name}
+                            return (
+                                <Link
+                                    key={category.name}
                                         href={`/menu-secondary/${restaurantId}?category=${encodeURIComponent(category.link)}`}
                                         className="bg-white dark:bg-gray-800 rounded-lg p-4 flex items-center shadow-sm hover:shadow-md dark:hover:shadow-lg transition-shadow duration-200 border border-gray-100 dark:border-gray-700"
-                                    >
+                                >
                                         <div className="bg-gray-100 dark:bg-gray-700 rounded-md p-2 flex-shrink-0">
                                             <Icon className="w-6 h-6 text-green-700 dark:text-green-400" />
-                                        </div>
+                                    </div>
 
                                         <span className="text-base font-semibold ml-3 text-gray-800 dark:text-gray-200">
-                                            {category.name}
-                                        </span>
-                                    </Link>
-                                );
-                            })}
-                        </div>
+                                        {category.name}
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                    </div>
                     ) : (
                         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                             Категорії не знайдено

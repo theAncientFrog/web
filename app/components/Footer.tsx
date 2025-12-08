@@ -31,9 +31,9 @@ const Footer: React.FC<{ forceLightTheme?: boolean }> = ({ forceLightTheme = fal
                 <div>
                     <h4 className={`font-semibold mb-3 text-gray-800 ${forceLightTheme ? '' : 'dark:text-gray-200'}`}>Продукт</h4>
                     <ul className={`space-y-2 text-sm text-gray-600 ${forceLightTheme ? '' : 'dark:text-gray-400'}`}>
-                        <li><a href="#" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Про нас</a></li>
-                        <li><a href="#" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>QR код</a></li>
-                        <li><a href="#" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Система</a></li>
+                        <li><Link href="/about" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Про нас</Link></li>
+                        <li><Link href="/qr-code" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>QR код</Link></li>
+                        <li><Link href="/system" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Система</Link></li>
                     </ul>
                 </div>
                 
@@ -42,9 +42,9 @@ const Footer: React.FC<{ forceLightTheme?: boolean }> = ({ forceLightTheme = fal
                 <div>
                     <h4 className={`font-semibold mb-3 text-gray-800 ${forceLightTheme ? '' : 'dark:text-gray-200'}`}>Партнерство</h4>
                     <ul className={`space-y-2 text-sm text-gray-600 ${forceLightTheme ? '' : 'dark:text-gray-400'}`}>
-                        <li><a href="#" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Підписка</a></li>
-                        <li><a href="#" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Підключення</a></li>
-                        <li><a href="/partners" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Партнери</a></li>
+                        <li><Link href="/subscription" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Підписка</Link></li>
+                        <li><Link href="/connection" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Підключення</Link></li>
+                        <li><Link href="/partners-program" className={`hover:text-green-600 ${forceLightTheme ? '' : 'dark:hover:text-green-400'} transition-colors`}>Партнери</Link></li>
                     </ul>
                 </div>
                 

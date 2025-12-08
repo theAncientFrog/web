@@ -23,7 +23,7 @@ const Homepage: React.FC = () => { // <-- Я перейменував з Dashboa
         // Я припускаю, що це батьківський div
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
             <Header
-                breadcrumpText="Breadcrump"
+                breadcrumpText="Breadcrumb"
                 description="Смак починається з мене"
                 onProfileClick={handleProfileClick} // <--- 6. Передаємо проп, якого вимагав Header
             />

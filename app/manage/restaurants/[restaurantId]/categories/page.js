@@ -140,7 +140,7 @@ export default function ManageCategoriesPage() {
                     {/* manageHeader */}
                     <header className="flex justify-between items-center mb-8 pb-6 border-b border-gray-200 flex-wrap gap-4">
                         <div className="manageHeaderTitle">
-                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">MANAGER MODE</h1>
+                            <h1 className="m-0 text-sm font-semibold tracking-wider text-gray-900 uppercase">Breadcrumb</h1>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-700">
                            {/* profileIcon */}
@@ -191,7 +191,7 @@ export default function ManageCategoriesPage() {
                                             <div key={parentCategory.id} className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                                                 {/* Батьківська категорія */}
                                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 border-b border-gray-100">
-                                                    {/* manageCategoryInfo */}
+                                        {/* manageCategoryInfo */}
                                                     <div className="flex items-center gap-3 flex-grow text-left overflow-hidden">
                                                         {/* Іконка категорії */}
                                                         {(() => {
@@ -210,10 +210,10 @@ export default function ManageCategoriesPage() {
                                                                 {subcategories.length > 0 && ` • ${subcategories.length} subcategories`}
                                                             </span>
                                                         </div>
-                                                    </div>
-                                                    
-                                                    {/* manageCategoryActions */}
-                                                    <div className="flex items-center gap-3 flex-shrink-0 pt-3 border-t border-gray-100 sm:border-t-0 sm:pt-0">
+                                        </div>
+                                        
+                                        {/* manageCategoryActions */}
+                                        <div className="flex items-center gap-3 flex-shrink-0 pt-3 border-t border-gray-100 sm:border-t-0 sm:pt-0">
                                                         {/* Редагування та Видалення - тільки для батьківських категорій */}
                                                         <button 
                                                             className="text-gray-500 transition hover:text-indigo-600"
@@ -247,25 +247,25 @@ export default function ManageCategoriesPage() {
                                                                     {/* manageCategoryActions */}
                                                                     <div className="flex items-center gap-3 flex-shrink-0 pt-3 border-t border-gray-200 sm:border-t-0 sm:pt-0">
                                                                         {/* Manage Items button - для дочірньої категорії */}
-                                                                        <Link
+                                            <Link
                                                                             href={`/manage/restaurants/${restaurantId}/categories/${subcategory.id}/items`}
-                                                                            className="bg-gray-100 text-indigo-600 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer no-underline whitespace-nowrap transition hover:bg-gray-200"
-                                                                        >
-                                                                            Manage Items
-                                                                        </Link>
+                                                className="bg-gray-100 text-indigo-600 rounded-lg px-3 py-2 text-sm font-medium cursor-pointer no-underline whitespace-nowrap transition hover:bg-gray-200"
+                                            >
+                                                Manage Items
+                                            </Link>
 
-                                                                        {/* Редагування та Видалення */}
+                                            {/* Редагування та Видалення */}
                                                                         <button 
                                                                             className="text-gray-500 transition hover:text-indigo-600"
                                                                             onClick={() => handleEditClick(subcategory)}
                                                                         >
-                                                                            <Settings size={20} />
-                                                                        </button>
-                                                                        <button className="text-gray-500 transition hover:text-red-500">
-                                                                            <Trash2 size={20} />
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
+                                                <Settings size={20} />
+                                            </button>
+                                            <button className="text-gray-500 transition hover:text-red-500">
+                                                <Trash2 size={20} />
+                                            </button>
+                                        </div>
+                                    </div>
                                                             ))}
                                                         </div>
                                                     </div>

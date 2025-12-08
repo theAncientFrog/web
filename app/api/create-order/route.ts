@@ -49,7 +49,6 @@ type PusherItemDetails = {
 type OrderItemCreateData = {
     dishId: number;
     quantity: number;
-    price: number; // Ціна для OrderItem
     priceAtPurchase: number; // Зберігаємо ціну на момент покупки
 };
 
@@ -136,9 +135,8 @@ export async function POST(request: Request) {
                 itemsToCreate.push({
                     dishId: cartItem.dishId,
                     quantity: cartItem.quantity,
-                    price: details.price, // Ціна для OrderItem
-                    priceAtPurchase: details.price, // Ціна на момент покупки
-                });
+                    priceAtPurchase: Number(details.price), // Ціна на момент покупки
+                } as OrderItemCreateData);
 
                 itemsForPusher.push({
                     name: details.name,
@@ -166,21 +164,26 @@ export async function POST(request: Request) {
                 itemsPreview: itemsToCreate.slice(0, 3).map(item => ({
                     dishId: item.dishId,
                     quantity: item.quantity,
-                    price: item.price,
                     priceAtPurchase: item.priceAtPurchase
                 }))
             });
+
+            // Переконуємося, що структура даних правильна
+            const orderItemsData = itemsToCreate.map(item => ({
+                dishId: item.dishId,
+                quantity: item.quantity,
+                priceAtPurchase: item.priceAtPurchase,
+            }));
 
             savedOrder = await prisma.order.create({
                 data: {
                     userId: userId,
                     restaurantId: numericRestaurantId,
                     totalPrice: totalPrice,
-                    status: 'PENDING', // 💡 Статус замовлення
-                    // @ts-ignore - tableNumber додано в схему Prisma, TypeScript може не бачити оновлений тип після регенерації
+                    status: 'PENDING' as const, // 💡 Статус замовлення
                     tableNumber: tableNumber || null, // 💡 Номер столика (якщо є)
                     items: {
-                        create: itemsToCreate,
+                        create: orderItemsData,
                     }
                 },
                 include: {
