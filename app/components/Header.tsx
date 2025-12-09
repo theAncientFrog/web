@@ -7,7 +7,6 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { User } from 'lucide-react';
 
-// ... (інтерфейс HeaderProps без змін) ...
 interface HeaderProps {
     breadcrumpText?: string;
     description?: string;
@@ -44,7 +43,6 @@ const Header: React.FC<HeaderProps> = ({
                     {/* Іконка Користувача */}
                     <button
                         onClick={onProfileClick}
-                        // 💡 ОНОВЛЕННЯ: Додаємо z-10, щоб кнопка була гарантовано "зверху"
                         className="relative z-10 text-gray-800 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 transition-colors p-2 rounded-full hover:bg-gray-50 dark:hover:bg-gray-700"
                         aria-label="Профіль користувача"
                     >
@@ -75,3 +73,4 @@ const Header: React.FC<HeaderProps> = ({
 };
 
 export default Header;
+

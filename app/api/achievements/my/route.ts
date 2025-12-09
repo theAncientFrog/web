@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
 
-// 💡 ВИРІШЕННЯ: Повідомляємо Next.js, що цей маршрут завжди динамічний
 // Це запобігає спробам статичної генерації під час збірки (build)
 export const dynamic = 'force-dynamic';
 

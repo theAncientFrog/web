@@ -33,7 +33,7 @@ const getStatusDetails = (status: OrderStatus) => {
 interface MyOrdersModalProps {
     isOpen: boolean;
     onClose: () => void;
-    restaurantId: string; // ⬅️ Потрібен ID ресторану для підписки на НОВІ замовлення
+    restaurantId: string;
 }
 
 
@@ -103,7 +103,7 @@ export default function MyOrdersModal({ isOpen, onClose, restaurantId }: MyOrder
                     status: 'PENDING',
                     items: data.items, // Використовуємо items з Pusher payload
                  };
-                setOrders(prev => [newOrder, ...prev]); // ⬅️ МИТТЄВО ДОДАЄМО ЗАМОВЛЕННЯ
+                setOrders(prev => [newOrder, ...prev]);
                 alert(`🔔 Нове замовлення №${data.order.id} успішно відправлено!`);
             }
         });
@@ -131,7 +131,6 @@ export default function MyOrdersModal({ isOpen, onClose, restaurantId }: MyOrder
     }
 
     return (
-        // ... (весь return)
         <>
             {/* Модалка деталей */}
             {selectedOrder && (

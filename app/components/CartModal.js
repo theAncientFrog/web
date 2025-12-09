@@ -8,7 +8,6 @@ import Image from 'next/image';
 import { X, Trash2, Minus, Plus } from 'lucide-react';
 import OrderNotificationModal from './OrderNotificationModal';
 
-// 💡 1. Компонент тепер приймає "restaurantId" та "tableNumber" як пропси
 export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }) {
     const { t, i18n } = useTranslation();
     const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
@@ -49,7 +48,6 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
             quantity: item.quantity
         }));
 
-        // 💡 2. Додаткова перевірка, що ID ресторану є
         if (!restaurantId) {
             setError('Помилка: не вдалося визначити ресторан. Оновіть сторінку.');
             setIsLoading(false);
@@ -71,11 +69,10 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 
-                // 💡 3. ГОЛОВНА ЗМІНА: Додаємо restaurantId та tableNumber в тіло запиту
                 body: JSON.stringify({ 
                     cart: itemsForApi,
-                    restaurantId: restaurantId, // ⬅️ Ось воно!
-                    tableNumber: tableNumber && tableNumber.trim() !== '' ? tableNumber.trim() : null // ⬅️ Номер столика (якщо є)
+                    restaurantId: restaurantId,
+                    tableNumber: tableNumber && tableNumber.trim() !== '' ? tableNumber.trim() : null
                 }),
             });
 
@@ -85,7 +82,7 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 throw new Error(data.message || 'Failed to place order');
             }
 
-            // Зберігаємо деталі замовлення перед очищенням кошика (з локалізованими назвами)
+            // Зберігаємо деталі замовлення перед очищенням кошика
             const orderDetails = {
                 items: cartItems.map(item => ({
                     name: getLocalizedItemName(item),

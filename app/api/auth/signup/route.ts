@@ -49,7 +49,6 @@ export async function POST(request: Request) {
         const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-значний код
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // Код дійсний 1 годину
 
-        // 💡 --- ВИПРАВЛЕННЯ ДЛЯ БЕК-ЕНДУ ---
         // 'upsert' спричиняв помилку, бо 'email' не є @unique в схемі EmailVerificationCode.
         // Цей патерн (видалити старі коди, створити новий) є надійнішим.
 
@@ -69,7 +68,6 @@ export async function POST(request: Request) {
         // --- КІНЕЦЬ ВИПРАВЛЕННЯ ---
 
         // 6. Надсилання email
-        // 💡 --- ВИПРАВЛЕННЯ TS2345 ---
         // Використовуємо 'email.toLowerCase()' замість 'newUser.email',
         // оскільки TypeScript вважає, що 'newUser.email' може бути 'null' (через схему Prisma).
         // Ми знаємо, що 'email' тут - це 'string', бо ми валідували його на початку.

@@ -116,8 +116,6 @@ export async function GET(request: Request) {
     // (БД містить українські назви, але API може отримати англійські)
     const uaCategoryName = getUkrainianCategoryName(categoryName);
     
-    console.log(`[Dishes API] Locale: ${locale}, Requested category: "${categoryName}", Searching for: "${uaCategoryName}"`);
-    
     const numericRestaurantId = Number(restaurantId);
     let dishes = [];
 
@@ -201,20 +199,8 @@ export async function GET(request: Request) {
       });
     }
 
-    console.log(`[Dishes API] Found ${dishes.length} dishes before localization`);
-    
     // Локалізуємо страви відповідно до мови
     const localizedDishes = localizeEntities(dishes, locale);
-    
-    console.log(`[Dishes API] Localized ${localizedDishes.length} dishes for locale: ${locale}`);
-    
-    // Перевірка: чи є страви з пустими назвами (має не бути, бо fallback на українську)
-    const emptyNames = localizedDishes.filter(d => !d.name || d.name.trim() === '');
-    if (emptyNames.length > 0) {
-      console.warn(`[Dishes API] Warning: ${emptyNames.length} dishes have empty names after localization:`, 
-        emptyNames.map(d => ({ id: d.id, originalName: dishes.find(orig => orig.id === d.id)?.name })));
-      // НЕ фільтруємо - показуємо всі страви, навіть якщо назва пуста (fallback має спрацювати)
-    }
 
     // Додаємо заголовки для кешування та SEO
     return NextResponse.json(localizedDishes, {

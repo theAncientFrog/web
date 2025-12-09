@@ -1,4 +1,3 @@
-// app/api/auth/[...nextauth]/route.js
 
 import NextAuth from 'next-auth';
 // ▼▼▼ ВИПРАВЛЕНО: Використовуємо абсолютний шлях з псевдонімом @/ ▼▼▼

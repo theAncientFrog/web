@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
                     {/* 3. ✅ ДОДАНО: Кнопка "Назад" */}
                     <Link
-                        href="/manage/restaurants" // ⬅️ Перевірте, чи це правильний шлях
+                        href="/manage/restaurants"
                         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-4"
                     >
                         <ArrowLeft size={16} />

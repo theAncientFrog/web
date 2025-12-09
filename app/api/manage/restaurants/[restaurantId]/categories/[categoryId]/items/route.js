@@ -10,14 +10,9 @@ export async function GET(request, { params }) {
     const restaurantId = parseInt(params.restaurantId);
     const categoryId = parseInt(params.categoryId);
 
-    // Додамо логування для дебагу (якщо воно ще потрібне)
-    console.log("--- DEBUG: GET ITEMS API ---");
-    console.log("SESSION:", JSON.stringify(session, null, 2));
-    console.log("REQUESTED IDs:", { restaurantId, categoryId });
 
     // Перевірка авторизації та ID
     if (!session?.user?.email || session.user.role !== 'OWNER' || isNaN(restaurantId) || isNaN(categoryId)) {
-        console.error("DEBUG: FAILED CHECK 1 (401 Unauthorized)");
         return NextResponse.json({ error: 'Unauthorized or Invalid IDs' }, { status: 401 });
     }
 
@@ -34,7 +29,6 @@ export async function GET(request, { params }) {
         });
 
         if (!category) {
-            console.error("DEBUG: FAILED CHECK 2 (404 Not Found - Not owner or not exist)");
             return NextResponse.json({ error: 'Category not found or access denied' }, { status: 404 });
         }
 

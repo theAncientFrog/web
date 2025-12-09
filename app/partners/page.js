@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Header from '../components/Header'; // Ваш Header.tsx
 import Footer from '../components/Footer';
 import RestaurantCard from '../components/RestaurantCard';
-import ProfileModal from '../components/ProfileModal'; // ⬅️ 1. ІМПОРТ МОДАЛКИ
+import ProfileModal from '../components/ProfileModal';
 
 // (JSDoc та StarRating залишаємо без змін)
 /**
@@ -35,7 +35,6 @@ const StarRating = ({ rating }) => {
 
 
 export default function PartnersPage() {
-    // 2. Додайте стан для модального вікна
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     const [restaurants, setRestaurants] = useState([]);
@@ -69,13 +68,11 @@ export default function PartnersPage() {
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
 
-            {/* 3. Передайте функцію для відкриття модалки в Header */}
             <Header 
                 breadcrumpText="Breadcrumb"
                 onProfileClick={() => setIsProfileOpen(true)} 
             />
 
-            {/* 4. Додайте ProfileModal сюди, щоб він міг рендеритись */}
             <ProfileModal
                 isOpen={isProfileOpen}
                 onClose={() => setIsProfileOpen(false)}

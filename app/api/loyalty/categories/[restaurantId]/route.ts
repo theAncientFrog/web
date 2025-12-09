@@ -47,7 +47,6 @@ export async function GET(
         // Повертаємо дані для всіх категорій, навіть якщо немає статистики
         const categoriesWithLevels = await Promise.all(
             mainCategories.map(async (category) => {
-                // @ts-ignore - userCategoryStats може не бути в типі, але існує в БД
                 let stats = null;
                 try {
                     if (prisma.userCategoryStats) {

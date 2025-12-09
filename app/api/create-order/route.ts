@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth.config';
-import { checkAndAwardAchievements } from '@/lib/achievementService'; // 💡 1. Імпорт Ачівок
+import { checkAndAwardAchievements } from '@/lib/achievementService';
 
 // Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,6 @@ type CartItem = {
     quantity: number;
 };
 
-// ... (Інші типи: PusherItemDetails, OrderItemCreateData) ...
 // Тип даних для Pusher
 type PusherItemDetails = {
     name: string;
@@ -180,8 +179,8 @@ export async function POST(request: Request) {
                     userId: userId,
                     restaurantId: numericRestaurantId,
                     totalPrice: totalPrice,
-                    status: 'PENDING' as const, // 💡 Статус замовлення
-                    tableNumber: tableNumber || null, // 💡 Номер столика (якщо є)
+                    status: 'PENDING' as const,
+                    tableNumber: tableNumber || null,
                     items: {
                         create: orderItemsData,
                     }
@@ -238,7 +237,7 @@ export async function POST(request: Request) {
                         totalPrice: savedOrder.totalPrice,
                         status: savedOrder.status,
                         createdAt: savedOrder.createdAt,
-                        tableNumber: (savedOrder as any).tableNumber || null, // 💡 Додаємо номер столика
+                        tableNumber: (savedOrder as any).tableNumber || null,
                         items: (savedOrder as any).items.map((item: any) => ({
                             name: item.dish.name,
                             quantity: item.quantity,
@@ -260,7 +259,6 @@ export async function POST(request: Request) {
             console.warn('[Pusher] Pusher не ініціалізовано. Сповіщення не відправлено.');
         }
 
-        // 💡 --- 8. НОВА ЛОГІКА РІВНІВ КАТЕГОРІЙ (XP) ---
         // Для кожної страви знаходимо головну категорію та додаємо XP
         // Обгортаємо в try-catch, щоб помилки не блокували створення замовлення
         try {
@@ -411,7 +409,6 @@ export async function POST(request: Request) {
         // --- КІНЕЦЬ ЛОГІКИ РІВНІВ КАТЕГОРІЙ ---
 
 
-        // 💡 --- 9. ЛОГІКА АЧІВОК (залишається) ---
         // Перевірка ачівок відбудеться у фоновому режимі.
         // ВАЖЛИВО: 'checkAndAwardAchievements' має бути оновлений,
         // щоб перевіряти статус 'COMPLETED' для замовлень.

@@ -15,7 +15,7 @@ interface DetailsModalProps {
     isOpen: boolean;
     onClose: () => void;
     orderId: number;
-    items: ItemDetail[]; // ⬅️ Очікуємо масив
+    items: ItemDetail[];
     total: number;
 }
 

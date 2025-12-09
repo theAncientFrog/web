@@ -26,7 +26,6 @@ type Order = {
     tableNumber?: string | null; // 💡 Номер столика
 };
 
-// 💡 1. Тип даних, що надходять з API (при завантаженні історії)
 // (Припускаємо, що API повертає таку структуру з Prisma)
 type ApiOrderResponse = {
     id: number;
@@ -46,7 +45,6 @@ type ApiOrderResponse = {
     }[];
 };
 
-// 💡 2. Тип даних, що надходять з PUSHER (з /api/create-order)
 type NewOrderPusherPayload = {
     message: string;
     order: {
@@ -54,7 +52,7 @@ type NewOrderPusherPayload = {
         totalPrice: number;
         status: 'PENDING';
         createdAt: string;
-        tableNumber?: string | null; // 💡 Номер столика
+        tableNumber?: string | null;
         items: {
             name: string;
             quantity: number;
@@ -126,10 +124,8 @@ export default function RestaurantDashboard() {
                     throw new Error(errData.message || 'Не вдалося завантажити історію замовлень.');
                 }
 
-                // 💡 3. ОТРИМУЄМО "СИРІ" ДАНІ З API
                 const data: ApiOrderResponse[] = await res.json();
 
-                // 💡 4. ТРАНСФОРМУЄМО ДАНІ У ЛОКАЛЬНИЙ ТИП "Order"
                 const transformedOrders: Order[] = data.map(order => ({
                     id: order.id,
                     createdAt: order.createdAt,
@@ -145,7 +141,7 @@ export default function RestaurantDashboard() {
                     }))
                 }));
 
-                setOrders(sortOrders(transformedOrders)); // ⬅️ СОРТУЄМО ТРАНСФОРМОВАНІ
+                setOrders(sortOrders(transformedOrders));
             } catch (err: any) {
                 setError(err.message);
                 setOrders([]);
@@ -164,7 +160,6 @@ export default function RestaurantDashboard() {
 
         const channel = pusherClient.subscribe(channelName);
 
-        // 💡 5. ВИПРАВЛЕНО: Слухач НОВИХ ЗАМОВЛЕНЬ
         channel.bind('new-order', (data: NewOrderPusherPayload) => {
             console.log('Pusher: Отримано нове замовлення!', data);
 
@@ -174,9 +169,9 @@ export default function RestaurantDashboard() {
                 createdAt: data.order.createdAt,
                 totalPrice: data.order.totalPrice,
                 status: data.order.status, // Це 'PENDING'
-                tableNumber: data.order.tableNumber || null, // 💡 Номер столика
-                userName: data.userName,   // ⬅️ з data.userName
-                items: data.order.items.map(item => ({ // ⬅️ з data.order.items
+                tableNumber: data.order.tableNumber || null,
+                userName: data.userName,
+                items: data.order.items.map(item => ({
                     name: item.name,
                     quantity: item.quantity,
                     price: item.priceAtPurchase

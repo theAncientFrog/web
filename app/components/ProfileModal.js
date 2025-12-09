@@ -17,13 +17,12 @@ export default function ProfileModal({ isOpen, onClose }) {
     const [isLoading, setIsLoading] = useState(false); // Для списку в "My Items"
     const [error, setError] = useState(null); // Для списку в "My Items"
 
-    // 💡 1. ОНОВЛЕНО: Зберігаємо також список найновіших ачівок
     const [summaryData, setSummaryData] = useState({
         achievementsCount: 0,
         visitedCount: 0,
         totalOrdersCount: 0
     });
-    const [newestAchievements, setNewestAchievements] = useState([]); // ⬅️ НОВИЙ СТАН
+    const [newestAchievements, setNewestAchievements] = useState([]);
     const [isSummaryLoading, setIsSummaryLoading] = useState(true);
 
     // Стани для налаштувань профілю
@@ -33,9 +32,6 @@ export default function ProfileModal({ isOpen, onClose }) {
     const [saveError, setSaveError] = useState('');
     const [saveSuccess, setSaveSuccess] = useState(false);
 
-    // app/components/ProfileModal.js
-
-    // 💡 2. ОНОВЛЕНО: Ефект тепер завантажує дані окремо (більш надійно)
     useEffect(() => {
         if (isOpen) {
             setView('main'); // Завжди скидаємо на головний екран
@@ -71,7 +67,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                     const achievementsRes = await fetch('/api/achievements/my');
                     if (achievementsRes.ok) {
                         const achievementsList = await achievementsRes.json();
-                        setNewestAchievements(achievementsList); // ⬅️ Зберігаємо список
+                        setNewestAchievements(achievementsList);
 
                         // Також оновлюємо к-сть на випадок, якщо /summary впав
                         setSummaryData(prev => ({
@@ -160,19 +156,15 @@ export default function ProfileModal({ isOpen, onClose }) {
         }
     };
 
-    // --- 🎨 3. ОНОВЛЕНО: Компонент Ачівок (додано класи теми) ---
     const AchievementsView = () => (
-        // Додано: bg-white dark:bg-gray-800
         <div className="p-6 bg-white dark:bg-gray-800">
             <header className="flex items-center justify-between mb-4">
-                {/* Додано: text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 */}
                 <button
                     onClick={() => setView('main')}
                     className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
                     <ArrowLeft size={20}/>
                 </button>
-                {/* Додано: text-gray-900 dark:text-white */}
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Мої Ачівки</h2>
                 <div className="w-8"/>
             </header>
@@ -191,16 +183,13 @@ export default function ProfileModal({ isOpen, onClose }) {
                 {!isLoading && !error && achievements.length > 0 && (
                     <ul className="space-y-3">
                         {achievements.map((ach) => (
-                            // Додано: bg-gray-100 dark:bg-gray-900
                             <li key={ach.id}
                                 className="flex items-center gap-4 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
-                                {/* Додано: bg-gray-200 dark:bg-gray-700 */}
                                 <div
                                     className="flex-shrink-0 w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
                                     <Trophy size={20} className="text-yellow-500"/>
                                 </div>
                                 <div>
-                                    {/* Додано: text-gray-900 dark:text-white та text-gray-500 dark:text-gray-400 */}
                                     <h3 className="font-semibold text-gray-900 dark:text-white">{ach.name}</h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400">{ach.description}</p>
                                 </div>
@@ -304,14 +293,11 @@ export default function ProfileModal({ isOpen, onClose }) {
     );
 
     const MainView = ({summary, isLoading, achievements}) => (
-        // Додано: bg-white dark:bg-gray-800
         <div className="p-6 bg-white dark:bg-gray-800">
             <header className="relative flex items-center justify-center pb-4">
-                {/* Додано: text-gray-900 dark:text-white */}
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {session?.user?.role === 'OWNER' ? 'Restaurant Owner' : 'Profile'}
                 </h2>
-                {/* Додано: text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 */}
                 <button
                     onClick={onClose}
                     className="absolute top-0 right-0 p-1 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -343,23 +329,19 @@ export default function ProfileModal({ isOpen, onClose }) {
                 <p className="text-sm text-gray-500 dark:text-gray-400">{session?.user?.email}</p>
             </div>
 
-            {/* Статистика (ОНОВЛЕНО) */}
             <div className="grid grid-cols-3 gap-3 mb-4">
-                {/* Картка Візитів */}
                 <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded-lg text-center">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Відвідано</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
                         {isLoading ? '...' : summary.visitedCount}
                     </p>
                 </div>
-                {/* Картка Ачівок */}
                 <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded-lg text-center">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ачівки</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
                         {isLoading ? '...' : summary.achievementsCount}
                     </p>
                 </div>
-                {/* Картка Замовлень */}
                 <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded-lg text-center">
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Замовлень</p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
@@ -384,7 +366,6 @@ export default function ProfileModal({ isOpen, onClose }) {
                 </button>
             </div>
 
-            {/* 🏆 5. ОНОВЛЕНО: Секція ачівок тепер показує іконки */}
             <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Achievements</h3>
 
             {isLoading ? (
@@ -392,33 +373,28 @@ export default function ProfileModal({ isOpen, onClose }) {
                     Завантаження...
                 </div>
             ) : achievements && achievements.length > 0 ? (
-                // Показуємо іконки, якщо ачівки є
                 <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg flex justify-center space-x-3">
-                    {/* Беремо перші 4 найновіші ачівки */}
                     {achievements.slice(0, 4).map((ach) => (
                         <div
                             key={ach.id}
                             className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center"
-                            title={ach.name} // ⬅️ Назва з'явиться при наведенні
+                            title={ach.name}
                         >
                             <Trophy size={24} className="text-yellow-500"/>
                         </div>
                     ))}
                 </div>
             ) : (
-                // Текст, якщо ачівок немає
                 <div
                     className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg text-center text-gray-500 dark:text-gray-400 text-sm mb-4">
                     You have no achievements yet. Make your first order!
                 </div>
             )}
 
-            {/* Перемикачі (без змін) */}
             <ThemeSwitcher/>
             <div className="h-2"/>
             <LocaleSwitcher/>
 
-            {/* Додано: text-gray-500 dark:text-gray-400 ... */}
             <button
                 onClick={() => signOut({callbackUrl: '/'})}
                 className="w-full mt-4 text-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white py-2"
@@ -427,7 +403,7 @@ export default function ProfileModal({ isOpen, onClose }) {
             </button>
         </div>
     );
-// --- ГОЛОВНИЙ РЕНДЕР (ОНОВЛЕНО) ---
+
     return (
         <div className={`
       fixed inset-0 z-50 p-4
@@ -438,13 +414,12 @@ export default function ProfileModal({ isOpen, onClose }) {
             <div className="fixed inset-0 bg-black/50" onClick={onClose} />
 
             <div className="relative w-full max-w-md mx-3 sm:mx-0">
-                {/* 🎨 6. ОНОВЛЕНО: Головна обгортка тепер теж реагує на тему */}
                 <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-2xl shadow-lg overflow-hidden">
                     {view === 'main' ? (
                         <MainView
                             summary={summaryData}
                             isLoading={isSummaryLoading}
-                            achievements={newestAchievements} // ⬅️ Передаємо список ачівок
+                            achievements={newestAchievements}
                         />
                     ) : view === 'achievements' ? (
                         <AchievementsView />
@@ -455,4 +430,4 @@ export default function ProfileModal({ isOpen, onClose }) {
             </div>
         </div>
     );
-} // ⬅️ ❗️ І найголовніше, додайте цю закриваючу дужку в кінці!
+}

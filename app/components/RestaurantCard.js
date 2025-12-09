@@ -49,7 +49,6 @@ export default function RestaurantCard({ restaurant }) {
 
     return (
         // Обгортка Link для переходу
-        // ⬅️ ВИПРАВЛЕННЯ: Додано зовнішній відступ mb-8
         <Link 
             href={`/menu/${restaurant.id}`} 
             className="block bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl dark:hover:shadow-2xl transition-shadow duration-300 overflow-hidden no-underline text-gray-900 dark:text-white mb-4 sm:mb-6 md:mb-8 border border-gray-100 dark:border-gray-700"

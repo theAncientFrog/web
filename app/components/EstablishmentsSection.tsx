@@ -24,7 +24,6 @@ export default function EstablishmentsSection() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // ⬅️ Завантаження даних з API
     useEffect(() => {
         const currentLang = i18n.language || 'ua';
         fetch('/api/partners', {
@@ -53,7 +52,6 @@ export default function EstablishmentsSection() {
     const limitedRestaurants = restaurants.slice(0, 3);
 
     return (
-        // ⬅️ Збільшений вертикальний відступ
         <section className="mt-8 sm:mt-12 md:mt-16"> 
             
             {/* ▼▼▼ ЗАГОЛОВОК ТА КНОПКА ▼▼▼ */}

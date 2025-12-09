@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
 
     // Перевірка авторизації та ID
     if (!session?.user?.email || session.user.role !== 'OWNER' || isNaN(restaurantId)) {
-        console.error("DEBUG: FAILED CHECK 1 (401 Unauthorized)"); // ⬅️ Додатковий лог
+        console.error("DEBUG: FAILED CHECK 1 (401 Unauthorized)");
         return NextResponse.json({ error: 'Unauthorized or Invalid ID' }, { status: 401 });
     }
 
@@ -33,7 +33,7 @@ export async function GET(request, { params }) {
         });
 
         if (!restaurant) {
-            console.error("DEBUG: FAILED CHECK 2 (404 Not Found - Not owner or not exist)"); // ⬅️ Додатковий лог
+            console.error("DEBUG: FAILED CHECK 2 (404 Not Found - Not owner or not exist)");
             return NextResponse.json({ error: 'Restaurant not found or access denied' }, { status: 404 });
         }
 

@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma';
 // Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
 export const dynamic = 'force-dynamic';
 
-// 💡 ПРИМІТКА: Ми видалили помилковий TypeScript-код (type RouteParams = ...)
 // бо це .js файл. Ми використовуємо JSDoc для типів.
 
 /**
@@ -27,7 +26,6 @@ export async function GET() {
             return NextResponse.json({ message: 'Доступ заборонено. Необхідний статус ВЛАСНИКА.' }, { status: 403 });
         }
         
-        // 💡 2. ВИПРАВЛЕННЯ: Перетворюємо ID сесії (рядок) на ЧИСЛО
         const ownerId = Number(session.user.id);
 
         if (isNaN(ownerId)) {
@@ -116,7 +114,6 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Доступ заборонено. Необхідний статус ВЛАСНИКА.' }, { status: 403 });
         }
         
-        // 💡 4. ВИПРАВЛЕННЯ: Тут також перетворюємо ID на число
         const ownerId = Number(session.user.id);
         if (isNaN(ownerId)) {
              return NextResponse.json({ message: 'Некоректний ID користувача' }, { status: 400 });

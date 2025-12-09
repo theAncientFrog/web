@@ -65,18 +65,14 @@ export default function MenuPage() {
     const [categories, setCategories] = useState([]);
     const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
-    // 💡 --- 1. ДОДАНО СТАН ДЛЯ РІВНІВ ---
     const [loyalty, setLoyalty] = useState({ level: 1, progress: 0 });
     const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(true);
-    // --- КІНЕЦЬ ---
 
     const { data: session, status } = useSession();
     const router = useRouter();
     const params = useParams();
     const restaurantId = params.restaurantId;
 
-    // --- ДАНІ РЕСТОРАНУ (Тепер як заглушки, доки не спрацює API) ---
-    // const userLevel = 'lvl. 23'; // 💡 ВИДАЛЕНО ХАРДКОД
     const restaurantRating = '★★★★☆';
     const defaultPlaceholder = '/images/placeholder.jpg';
 
@@ -85,12 +81,9 @@ export default function MenuPage() {
     const userImage = session?.user?.image;
 
 
-    // ⬅️ ЛОГІКА ЗАВАНТАЖЕННЯ ДАНИХ (для картки)
     useEffect(() => {
-        // Ми залишаємо цю логіку, щоб завантажити дані для картки ресторану
-        if (restaurantId) { // Завантажуємо, навіть якщо юзер не залогінений
+        if (restaurantId) {
             setIsLoadingData(true);
-            // Додаємо локаль до запиту
             const langParam = isEnglish ? '?lang=en' : '?lang=ua';
             fetch(`/api/menu/${restaurantId}${langParam}`, {
                 headers: {
@@ -112,32 +105,27 @@ export default function MenuPage() {
     }, [restaurantId, isEnglish]);
 
 
-    // 💡 --- 2. ДОДАНО ЛОГІКУ ЗАВАНТАЖЕННЯ РІВНЯ ---
     useEffect(() => {
         if (restaurantId) {
             setIsLoadingLoyalty(true);
-            // Цей API-роут працює, навіть якщо користувач не залогінений
             fetch(`/api/loyalty/${restaurantId}`)
                 .then(res => res.json())
                 .then(data => {
-                    setLoyalty(data); // data буде { level: 1, progress: 0, ... }
+                    setLoyalty(data);
                 })
                 .catch(error => {
                     console.error('Failed to load loyalty data:', error);
-                    setLoyalty({ level: 1, progress: 0 }); // Встановлюємо дефолт у разі помилки
+                    setLoyalty({ level: 1, progress: 0 });
                 })
                 .finally(() => {
                     setIsLoadingLoyalty(false);
                 });
         }
     }, [restaurantId]);
-    // --- КІНЕЦЬ ---
 
-    // 💡 --- 3. ДОДАНО ЛОГІКУ ЗАВАНТАЖЕННЯ КАТЕГОРІЙ ---
     useEffect(() => {
         if (restaurantId) {
             setIsLoadingCategories(true);
-            // Додаємо локаль до запиту
             const langParam = isEnglish ? '&lang=en' : '&lang=ua';
             fetch(`/api/categories?restaurantId=${restaurantId}${langParam}`, {
                 headers: {
@@ -147,12 +135,10 @@ export default function MenuPage() {
             })
                 .then(res => res.json())
                 .then(data => {
-                    // Форматуємо категорії для відображення
-                    // API вже повертає локалізовані дані (без nameEn), тому просто використовуємо name
                     const formattedCategories = data.map(category => ({
-                        name: category.name, // Вже локалізована назва
+                        name: category.name,
                         icon: getIconForCategory(category.name),
-                        link: category.name, // Використовуємо ім'я як посилання
+                        link: category.name,
                     }));
                     setCategories(formattedCategories);
                 })
@@ -164,8 +150,7 @@ export default function MenuPage() {
                     setIsLoadingCategories(false);
                 });
         }
-    }, [restaurantId, isEnglish]); // Додаємо isEnglish для перезавантаження при зміні мови
-    // --- КІНЕЦЬ ---
+    }, [restaurantId, isEnglish]);
 
 
     // Стан завантаження

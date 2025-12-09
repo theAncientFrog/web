@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import AnalyticsCard from '@/app/components/AnalyticsCard';
-// 💡 1. Імпортуємо іконки, які вимагає картка
 import { DollarSign, CheckCircle, BarChartHorizontal } from 'lucide-react';
 
 // --- ТИПИ ---
@@ -82,7 +81,7 @@ export default function StatsPage() {
                     title="Загальний дохід"
                     value={formattedRevenue}
                     icon={<DollarSign size={20} />}
-                    valueColor="text-green-600" // ⬅️ Додано
+                    valueColor="text-green-600"
                 />
 
                 {/* Картка 2: Додано icon та valueColor, видалено description */}
@@ -90,7 +89,7 @@ export default function StatsPage() {
                     title="Завершено замовлень"
                     value={stats.completedOrders.toString()}
                     icon={<CheckCircle size={20} />}
-                    valueColor="text-indigo-600" // ⬅️ Додано
+                    valueColor="text-indigo-600"
                 />
 
                 {/* Картка 3: Додано icon та valueColor, видалено description */}
@@ -98,7 +97,7 @@ export default function StatsPage() {
                     title="Всього замовлень"
                     value={stats.totalOrdersAllTime.toString()}
                     icon={<BarChartHorizontal size={20} />}
-                    valueColor="text-gray-800" // ⬅️ Додано
+                    valueColor="text-gray-800"
                 />
             </div>
 

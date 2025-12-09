@@ -5,11 +5,9 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Settings, Trash2, User, Plus, LogOut } from 'lucide-react';
-// 💡 1. Імпортуємо модальне вікно
 import AddRestaurantModal from '../../components/AddRestaurantModal';
 
 export default function ManageRestaurantsPage() {
-    // 💡 2. Додаємо стан для модального вікна
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [restaurants, setRestaurants] = useState([]);
@@ -70,7 +68,6 @@ export default function ManageRestaurantsPage() {
         signOut({ callbackUrl: '/login' });
     };
 
-    // 💡 3. Обробник для оновлення UI після додавання
     const handleRestaurantAdded = (newRestaurant) => {
         setRestaurants((prev) => [newRestaurant, ...prev]);
         // Модальне вікно закриється саме (через його внутрішній handleClose)

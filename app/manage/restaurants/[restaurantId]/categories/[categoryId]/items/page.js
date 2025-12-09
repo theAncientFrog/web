@@ -38,7 +38,6 @@ export default function ManageItemsPage() {
                 })
                 .then(setItems)
                 .catch(console.error);
-            // TODO: Отримати назву категорії (потрібен окремий fetch)
         }
     }, [status, restaurantId, categoryId, router]);
 
@@ -120,7 +119,6 @@ export default function ManageItemsPage() {
                 categoryId={categoryId}
             />
 
-            {/* pageContainer + menuPageContainer */}
             <main className="w-full min-h-screen flex flex-col bg-white justify-start">
                 {/* manageContentWrapper */}
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">

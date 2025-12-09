@@ -53,7 +53,7 @@ export async function PUT(
 
         // 2. Отримуємо статус та явно приводимо його до нашого типу OrderStatus
         const { status } = await request.json();
-        const newStatus = status as OrderStatus; // ⬅️ ВИПРАВЛЕНО
+        const newStatus = status as OrderStatus;
 
         // 3. Об'єкт сповіщень (тепер безпечний для використання з newStatus)
         const statusMap = {
@@ -68,7 +68,6 @@ export async function PUT(
         const updatedOrder = await prisma.order.update({
             where: { id: orderId },
             data: { status: newStatus },
-            // 💡 --- ОНОВЛЕНО ---
             // Додаємо totalPrice, щоб знати, скільки XP нарахувати
             select: {
                 userId: true,
@@ -79,7 +78,6 @@ export async function PUT(
             }
         });
 
-        // 💡 --- 5. ДОДАНО ЛОГІКУ НАРАХУВАННЯ XP ---
         // XP нараховується тільки для завершених замовлень, не для скасованих
         if (newStatus === 'COMPLETED') {
             // Формула: 1 гривня = 1 XP.
@@ -112,7 +110,6 @@ export async function PUT(
         }
         // --- КІНЕЦЬ ЛОГІКИ XP ---
 
-        // 💡 --- 5.5. ПЕРЕВІРКА АЧІВОК ПРИ ЗАВЕРШЕННІ ЗАМОВЛЕННЯ ---
         if (newStatus === 'COMPLETED') {
             console.log(`[Order Status] 🎯 Замовлення ${orderId} завершено. Перевіряємо ачівки для користувача ${updatedOrder.userId}`);
             // Перевіряємо та видаємо ачівки в фоновому режимі

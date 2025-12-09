@@ -70,7 +70,6 @@ export async function POST(request) {
         }
 
         // --- Тут ви б мали створити запис Order у базі даних зі статусом PENDING ---
-        // await prisma.order.create({ data: { id: orderId, userId: session.user.id, ... } });
 
         // Повертаємо URL сторінки оплати
         return NextResponse.json({ pageUrl: monoData.pageUrl }, { status: 200 });

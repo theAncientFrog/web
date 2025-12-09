@@ -99,16 +99,12 @@ export default function ManageCategoriesPage() {
         setIsEditModalOpen(true);
     };
 
-    // TODO: Обробка видалення (аналогічно як у ManageItemsPage)
-    // const handleDeleteCategory = () => { /* ... */ };
 
 
     if (status === 'loading') {
-        // pageContainer + menuPageContainer + loadingText
         return <main className="w-full min-h-screen flex flex-col justify-center items-center bg-gray-100"><div className="p-8 text-center text-gray-500">Завантаження...</div></main>;
     }
     if (status === 'unauthenticated') {
-        // pageContainer + menuPageContainer + loadingText
         return <main className="w-full min-h-screen flex flex-col justify-center items-center bg-gray-100"><div className="p-8 text-center text-gray-500">Доступ заборонено.</div></main>;
     }
 
@@ -132,7 +128,6 @@ export default function ManageCategoriesPage() {
                 category={selectedCategory}
             />
 
-            {/* pageContainer + menuPageContainer */}
             <main className="w-full min-h-screen flex flex-col bg-white justify-start">
                 {/* manageContentWrapper */}
                 <div className="max-w-6xl mx-auto w-full px-4 sm:px-8 py-6 sm:py-8">

@@ -28,11 +28,9 @@ export async function GET(
     }
 
     // (Опціонально, але гарна практика) Перевірка, чи юзер є власником
-    // @ts-ignore (може знадобитися, якщо у session.user немає id)
     const restaurant = await prisma.restaurant.findFirst({
         where: {
             id: idAsNumber,
-            // @ts-ignore
             ownerId: session.user.id
         },
     });
@@ -53,7 +51,7 @@ export async function GET(
                     id: true,
                 },
                 where: {
-                    restaurantId: idAsNumber, // ⬅️ Використовуємо число
+                    restaurantId: idAsNumber,
                     status: 'COMPLETED',
                 },
             }),
@@ -61,7 +59,7 @@ export async function GET(
             // Запит B: Кількість ВСІХ замовлень
             prisma.order.count({
                 where: {
-                    restaurantId: idAsNumber, // ⬅️ Використовуємо число
+                    restaurantId: idAsNumber,
                 },
             }),
 
@@ -70,7 +68,7 @@ export async function GET(
                 by: ['dishId'],
                 where: {
                     order: {
-                        restaurantId: idAsNumber, // ⬅️ Використовуємо число
+                        restaurantId: idAsNumber,
                         status: 'COMPLETED',
                     },
                 },
@@ -105,7 +103,6 @@ export async function GET(
             return {
                 dishId: rawItem.dishId,
                 name: dish ? dish.name : 'Unknown Dish',
-                // 💡 3. БЕЗПЕЧНИЙ ДОСТУП:
                 quantitySold: rawItem._sum?.quantity ?? 0,
             };
         });
