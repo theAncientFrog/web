@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
 import RestaurantCard from './RestaurantCard'; 
 import { ArrowRight } from 'lucide-react'; // Використовуємо стрілку
 
@@ -18,13 +19,20 @@ interface RestaurantPreview {
 }
 
 export default function EstablishmentsSection() {
+    const { t, i18n } = useTranslation();
     const [restaurants, setRestaurants] = useState<RestaurantPreview[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     // ⬅️ Завантаження даних з API
     useEffect(() => {
-        fetch('/api/partners') // Викликаємо наш API, який повертає всі заклади
+        const currentLang = i18n.language || 'ua';
+        fetch('/api/partners', {
+            headers: {
+                'Accept-Language': currentLang,
+                'x-lang': currentLang,
+            }
+        }) // Викликаємо наш API, який повертає всі заклади
             .then(res => {
                  if (!res.ok) throw new Error('Failed to fetch data.');
                  return res.json();
@@ -33,13 +41,13 @@ export default function EstablishmentsSection() {
                 setRestaurants(data);
             })
             .catch(err => {
-                setError('Не вдалося завантажити список закладів.');
+                setError(t('common.failed_to_load_establishments'));
                 console.error(err);
             })
             .finally(() => {
                 setIsLoading(false);
             });
-    }, []);
+    }, [i18n.language, t]);
 
     // Обмежуємо список до перших 3-х елементів для головної сторінки
     const limitedRestaurants = restaurants.slice(0, 3);
@@ -53,7 +61,7 @@ export default function EstablishmentsSection() {
                 
                 {/* ⬅️ Задизайнений ЗАГОЛОВОК */}
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-                    Establishments:
+                    {t('common.establishments')}:
                 </h2>
                 
                 {/* ⬅️ Стилізована КНОПКА "Переглянути всі" */}
@@ -62,18 +70,18 @@ export default function EstablishmentsSection() {
                     // Використовуємо синій колір, як на вашому скріншоті-зразку
                     className="flex items-center text-sm sm:text-base font-semibold text-indigo-600 dark:text-indigo-400 transition hover:text-indigo-800 dark:hover:text-indigo-300 whitespace-nowrap p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 no-underline"
                 >
-                    Переглянути всі
+                    {t('banners.view_all')}
                     <ArrowRight size={18} className="sm:w-5 sm:h-5 ml-1" />
                 </Link>
             </div>
             {/* ▲▲▲ КІНЕЦЬ ЗАГОЛОВКУ ▲▲▲ */}
 
             {isLoading ? (
-                <div className="text-center text-gray-500 dark:text-gray-400 py-4 sm:py-6 text-sm sm:text-base">Завантаження закладів...</div>
+                <div className="text-center text-gray-500 dark:text-gray-400 py-4 sm:py-6 text-sm sm:text-base">{t('common.loading_establishments')}</div>
             ) : error ? (
-                <div className="text-center text-red-600 dark:text-red-400 py-4 sm:py-6 text-sm sm:text-base">{error}</div>
+                <div className="text-center text-red-600 dark:text-red-400 py-4 sm:py-6 text-sm sm:text-base">{error || t('common.failed_to_load_establishments')}</div>
             ) : limitedRestaurants.length === 0 ? (
-                <div className="text-center text-gray-500 dark:text-gray-400 py-4 sm:py-6 text-sm sm:text-base">Наразі немає доступних закладів.</div>
+                <div className="text-center text-gray-500 dark:text-gray-400 py-4 sm:py-6 text-sm sm:text-base">{t('common.no_establishments_available')}</div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {limitedRestaurants.map((restaurant) => (

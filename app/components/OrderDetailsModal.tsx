@@ -2,6 +2,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Тип для деталей, які ми показуємо
 type ItemDetail = {
@@ -19,6 +20,8 @@ interface DetailsModalProps {
 }
 
 export default function OrderDetailsModal({ isOpen, onClose, orderId, items, total }: DetailsModalProps) {
+    const { t } = useTranslation();
+    
     if (!isOpen) {
         return null;
     }
@@ -33,7 +36,7 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId, items, tot
                 </button>
                 
                 <h2 className="text-xl font-bold text-gray-900 p-6 pb-0">
-                    Деталі замовлення #{orderId}
+                    {t('common.order_details')} #{orderId}
                 </h2>
 
                 <div className="p-6 overflow-y-auto flex-grow space-y-3">
@@ -42,24 +45,24 @@ export default function OrderDetailsModal({ isOpen, onClose, orderId, items, tot
                         {items?.map((item, index) => (
                             <li key={index} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2">
                                 <span className="font-medium text-gray-800 break-words pr-2">{item.name} (x{item.quantity})</span>
-                                <span className="font-semibold text-indigo-600 flex-shrink-0">{(item.price * item.quantity).toFixed(2)} грн</span>
+                                <span className="font-semibold text-indigo-600 flex-shrink-0">{(item.price * item.quantity).toFixed(2)} {t('menu.currency')}</span>
                             </li>
                         ))}
                         {/* Повідомлення про відсутність деталей */}
                         {(!items || items.length === 0) && (
-                            <li className="text-center text-gray-500 py-4 text-sm">Деталі замовлення недоступні.</li>
+                            <li className="text-center text-gray-500 py-4 text-sm">{t('common.order_details_unavailable')}</li>
                         )}
                     </ul>
                 </div>
 
                 <div className="p-6 pt-0 flex-shrink-0">
                     <div className="flex justify-between font-extrabold text-lg mb-4 border-t border-gray-200 pt-3">
-                        <span>Всього:</span>
-                        <span className="text-2xl text-indigo-600">{total.toFixed(2)} грн</span>
+                        <span>{t('common.total')}:</span>
+                        <span className="text-2xl text-indigo-600">{total.toFixed(2)} {t('menu.currency')}</span>
                     </div>
                     {/* Кнопка закриття */}
                     <button onClick={onClose} className="w-full bg-gray-200 text-gray-700 px-4 py-3 rounded-lg font-bold hover:bg-gray-300 transition">
-                        Закрити
+                        {t('common.close')}
                     </button>
                 </div>
             </div>

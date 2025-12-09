@@ -102,7 +102,9 @@ enum CategoryType {
 model Restaurant {
   id          Int      @id @default(autoincrement())
   name        String
+  nameEn      String? // Англійська назва ресторану
   description String?
+  descriptionEn String? // Англійський опис ресторану
   imageUrl    String?
   bannerUrl   String?
   logoUrl     String?
@@ -119,7 +121,9 @@ model Restaurant {
 model Category {
   id           Int     @id @default(autoincrement())
   name         String
+  nameEn       String? // Англійська назва
   description  String?
+  descriptionEn String? // Англійський опис
 
   // Category hierarchy
   type         CategoryType @default(KITCHEN)
@@ -135,10 +139,13 @@ model Category {
 model Dish {
   id          Int     @id @default(autoincrement())
   name        String
+  nameEn      String? // Англійська назва
   description String?
+  descriptionEn String? // Англійський опис
   price       Float
   calories    Int?
-  allergens   String? // JSON string або comma-separated список алергенів
+  allergens   String? // Comma-separated список алергенів (українською)
+  allergensEn String? // Comma-separated список алергенів (англійською)
   imageUrl    String?
   categoryId  Int
   category    Category @relation(fields: [categoryId], references: [id])

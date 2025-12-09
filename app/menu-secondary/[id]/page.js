@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -28,11 +29,16 @@ import Footer from '../../components/Footer';
 import MenuItem from '../../components/MenuItem';
 
 function MenuSecondaryContent() {
+    const { t, i18n } = useTranslation();
     const params = useParams();
     const searchParams = useSearchParams();
     const router = useRouter();
     const { data: session, status } = useSession();
     const { cartCount } = useCart();
+    
+    // Визначаємо поточну мову
+    const currentLang = i18n.language || 'ua';
+    const isEnglish = currentLang.startsWith('en');
 
     const [restaurant, setRestaurant] = useState(null);
     const [allDishesByCategory, setAllDishesByCategory] = useState([]); // [{ categoryName, dishes, categoryId }]
@@ -108,12 +114,18 @@ function MenuSecondaryContent() {
         if (restaurantId) {
             setIsLoadingRestaurant(true);
             fetch(`/api/restaurants/${restaurantId}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`Failed to load restaurant: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     setRestaurant(data);
                 })
                 .catch(error => {
                     console.error('Failed to load restaurant:', error);
+                    setRestaurant(null);
                 })
                 .finally(() => {
                     setIsLoadingRestaurant(false);
@@ -124,8 +136,20 @@ function MenuSecondaryContent() {
     // Завантаження категорій
     useEffect(() => {
         if (restaurantId) {
-            fetch(`/api/categories?restaurantId=${restaurantId}`)
-                .then(res => res.json())
+            // Додаємо локаль до запиту
+            const langParam = isEnglish ? '&lang=en' : '&lang=ua';
+            fetch(`/api/categories?restaurantId=${restaurantId}${langParam}`, {
+                headers: {
+                    'x-lang': isEnglish ? 'en' : 'ua',
+                    'Accept-Language': isEnglish ? 'en' : 'ua',
+                }
+            })
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`Failed to load categories: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     // Перевіряємо, чи дані є масивом
                     if (Array.isArray(data)) {
@@ -153,12 +177,16 @@ function MenuSecondaryContent() {
                     setCategories([]); // Встановлюємо порожній масив у разі помилки
                 });
         }
-    }, [restaurantId, currentCategory, router]);
+    }, [restaurantId, currentCategory, router, searchParams, isEnglish]);
 
     // Завантаження всіх страв з усіх підкатегорій
     useEffect(() => {
         if (restaurantId && Array.isArray(categories) && categories.length > 0) {
             setIsLoadingDishes(true);
+            
+            // AbortController для захисту від race conditions
+            const abortController = new AbortController();
+            const signal = abortController.signal;
             
             // Збираємо всі підкатегорії
             const allSubcategories = [];
@@ -168,10 +196,11 @@ function MenuSecondaryContent() {
                 
                 if (mainCat.subcategories && mainCat.subcategories.length > 0) {
                     mainCat.subcategories.forEach(subCat => {
+                        // API вже повертає локалізовані дані (без nameEn), тому просто використовуємо name
                         allSubcategories.push({
-                            name: subCat.name,
+                            name: subCat.name, // Вже локалізована назва
                             id: subCat.id,
-                            mainCategoryName: mainCat.name,
+                            mainCategoryName: mainCat.name, // Вже локалізована назва
                             mainCategoryId: mainCatId // Додаємо ID головної категорії одразу
                         });
                     });
@@ -183,43 +212,75 @@ function MenuSecondaryContent() {
                 const dishesByCategory = [];
                 
                 for (const subCat of allSubcategories) {
+                    if (signal.aborted) break;
+                    
                     try {
-                        const res = await fetch(`/api/dishes?category=${encodeURIComponent(subCat.name)}&restaurantId=${restaurantId}`);
+                        // Додаємо локаль до запиту для правильної локалізації
+                        const langParam = isEnglish ? '&lang=en' : '&lang=ua';
+                        const res = await fetch(`/api/dishes?category=${encodeURIComponent(subCat.name)}&restaurantId=${restaurantId}${langParam}`, { 
+                            signal,
+                            headers: {
+                                'x-lang': isEnglish ? 'en' : 'ua',
+                                'Accept-Language': isEnglish ? 'en' : 'ua',
+                            }
+                        });
+                        
+                        if (!res.ok) {
+                            throw new Error(`Failed to fetch dishes: ${res.status}`);
+                        }
+                        
                         const dishes = await res.json();
                         
-                        if (dishes && dishes.length > 0) {
+                        if (Array.isArray(dishes) && dishes.length > 0) {
                             // Використовуємо mainCategoryId, який вже є в subCat
                             const mainCategoryId = subCat.mainCategoryId || null;
                             console.log(`[Category Mapping] Підкатегорія ${subCat.name} (ID: ${subCat.id}) → Головна категорія ${subCat.mainCategoryName} (ID: ${mainCategoryId})`);
+                            // API вже повертає локалізовані дані, тому просто використовуємо name
                             dishesByCategory.push({
-                                categoryName: subCat.name,
+                                categoryName: subCat.name, // Вже локалізована назва
                                 categoryId: subCat.id,
                                 mainCategoryId: mainCategoryId,
-                                mainCategoryName: subCat.mainCategoryName,
+                                mainCategoryName: subCat.mainCategoryName, // Вже локалізована назва
                                 dishes: dishes
                             });
                         }
                     } catch (error) {
+                        if (error.name === 'AbortError') {
+                            console.log('Fetch aborted');
+                            return;
+                        }
                         console.error(`Error fetching dishes for ${subCat.name}:`, error);
                     }
                 }
                 
-                setAllDishesByCategory(dishesByCategory);
-                setIsLoadingDishes(false);
+                if (!signal.aborted) {
+                    setAllDishesByCategory(dishesByCategory);
+                    setIsLoadingDishes(false);
+                }
             };
 
             fetchAllDishes();
+            
+            // Cleanup function для скасування запитів
+            return () => {
+                abortController.abort();
+            };
         }
-    }, [restaurantId, categories]);
+    }, [restaurantId, categories, isEnglish]);
 
     // Завантаження рівня лояльності закладу
     useEffect(() => {
         if (restaurantId && status === 'authenticated') {
             setIsLoadingLoyalty(true);
             fetch(`/api/loyalty/${restaurantId}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`Failed to load loyalty: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(data => {
-                    setLoyalty(data);
+                    setLoyalty(data || { level: 1, progress: 0 });
                 })
                 .catch(error => {
                     console.error('Failed to load loyalty:', error);
@@ -236,15 +297,20 @@ function MenuSecondaryContent() {
         if (restaurantId && status === 'authenticated') {
             console.log('[Category Levels] Завантаження рівнів категорій для ресторану:', restaurantId);
             fetch(`/api/loyalty/categories/${restaurantId}`)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`Failed to load category levels: ${res.status}`);
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     console.log('[Category Levels] Отримано дані:', data);
                     const levelsMap = {};
                     if (Array.isArray(data)) {
                         data.forEach(cat => {
                             levelsMap[cat.categoryId] = {
-                                level: cat.level,
-                                progress: cat.progress,
+                                level: cat.level || 1,
+                                progress: cat.progress || 0,
                                 hasStats: cat.hasStats || false, // Чи є статистика (чи робив покупки)
                             };
                             console.log(`[Category Levels] Категорія ${cat.categoryName} (ID: ${cat.categoryId}): level=${cat.level}, progress=${cat.progress}, hasStats=${cat.hasStats}`);
@@ -349,7 +415,7 @@ function MenuSecondaryContent() {
     if (isLoadingRestaurant) {
         return (
             <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-                <div className="text-gray-500 dark:text-gray-400">Завантаження...</div>
+                <div className="text-gray-500 dark:text-gray-400">{t('common.loading')}</div>
             </div>
         );
     }
@@ -357,7 +423,7 @@ function MenuSecondaryContent() {
     if (!restaurant) {
         return (
             <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-                <div className="text-red-600 dark:text-red-400">Ресторан не знайдено</div>
+                <div className="text-red-600 dark:text-red-400">{t('common.restaurant_not_found')}</div>
             </div>
         );
     }
@@ -452,14 +518,14 @@ function MenuSecondaryContent() {
                                                         <button
                                                             onClick={() => setIsTableNumberModalOpen(true)}
                                                             className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition whitespace-nowrap"
-                                                            title="Ввести номер столика вручну"
+                                                            title={t('menu.enter_table_manually')}
                                                         >
-                                                            Ввести номер столика
+                                                            {t('menu.enter_table_number')}
                                                         </button>
                                                     )}
                                                     {tableNumber && (
                                                         <div className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md whitespace-nowrap">
-                                                            Столик {tableNumber}
+                                                            {t('menu.table_number')} {tableNumber}
                                                         </div>
                                                     )}
                                                 </div>
@@ -591,7 +657,7 @@ function MenuSecondaryContent() {
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                                 <input
                                     type="text"
-                                    placeholder="Пошук страв..."
+                                    placeholder={t('menu.search')}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -616,7 +682,7 @@ function MenuSecondaryContent() {
                                 }`}
                             >
                                 <Filter size={18} />
-                                <span className="hidden sm:inline">Фільтри</span>
+                                <span className="hidden sm:inline">{t('menu.filters')}</span>
                             </button>
                         </div>
 
@@ -627,7 +693,7 @@ function MenuSecondaryContent() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Мін. ціна (грн)
+                                            {t('menu.min_price')} ({t('menu.currency')})
                                         </label>
                                         <input
                                             type="number"
@@ -640,12 +706,12 @@ function MenuSecondaryContent() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Макс. ціна (грн)
+                                            {t('menu.max_price')} ({t('menu.currency')})
                                         </label>
                                         <input
                                             type="number"
                                             min="0"
-                                            placeholder="Без обмежень"
+                                            placeholder={t('menu.no_limit')}
                                             value={priceFilter.max}
                                             onChange={(e) => setPriceFilter(prev => ({ ...prev, max: e.target.value }))}
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -657,7 +723,7 @@ function MenuSecondaryContent() {
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Мін. калорії
+                                            {t('menu.min_calories')}
                                         </label>
                                         <input
                                             type="number"
@@ -670,12 +736,12 @@ function MenuSecondaryContent() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Макс. калорії
+                                            {t('menu.max_calories')}
                                         </label>
                                         <input
                                             type="number"
                                             min="0"
-                                            placeholder="Без обмежень"
+                                            placeholder={t('menu.no_limit')}
                                             value={caloriesFilter.max}
                                             onChange={(e) => setCaloriesFilter(prev => ({ ...prev, max: e.target.value }))}
                                             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -686,10 +752,10 @@ function MenuSecondaryContent() {
                                 {/* Фільтр за алергенами */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Приховати страви з алергенами
+                                        {t('menu.hide_dishes_with_allergens')}
                                     </label>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                                        Оберіть алергени, які вам не підходять. Страви з цими алергенами будуть приховані.
+                                        {t('menu.select_allergens_description')}
                                     </p>
                                     <div className="flex flex-wrap gap-2">
                                         {commonAllergens.map((allergen) => {
@@ -728,7 +794,7 @@ function MenuSecondaryContent() {
                                         }}
                                         className="w-full py-2 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition"
                                     >
-                                        Скинути фільтри
+                                        {t('menu.clear_filters')}
                                     </button>
                                 )}
                             </div>
@@ -739,7 +805,7 @@ function MenuSecondaryContent() {
                 <div className="max-w-7xl mx-auto px-4 py-4 sm:py-8 flex gap-4 sm:gap-8 lg:gap-12">
                     {/* Sidebar - прихований на мобільних, показується на планшетах і десктопі */}
                     <aside className="w-56 hidden md:block flex-shrink-0 sticky top-24 md:top-32 h-[calc(100vh-120px)] md:h-[calc(100vh-140px)] overflow-y-auto select-none custom-scrollbar pr-2">
-                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Категорії</h2>
+                        <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">{t('menu.categories')}</h2>
                         <nav className="space-y-1">
                             {Array.isArray(categories) && categories.map((mainCat) => {
                                 const isExpanded = expandedCategories.has(mainCat.name);
@@ -797,18 +863,21 @@ function MenuSecondaryContent() {
                     <main className="flex-1 min-w-0">
                         {isLoadingDishes ? (
                             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                                Завантаження страв...
+                                {t('menu.loading_dishes')}
                             </div>
                         ) : (() => {
                             // Фільтрація страв
                             const filteredDishesByCategory = allDishesByCategory.map(categoryData => {
                                 const filteredDishes = categoryData.dishes.filter(dish => {
                                     // Пошук за назвою та описом
+                                    // API вже повертає локалізовані дані, тому використовуємо name та description
                                     if (searchQuery) {
                                         const query = searchQuery.toLowerCase();
+                                        const dishName = dish.name || '';
+                                        const dishDesc = dish.description || '';
                                         const matchesSearch = 
-                                            dish.name.toLowerCase().includes(query) ||
-                                            (dish.description && dish.description.toLowerCase().includes(query));
+                                            dishName.toLowerCase().includes(query) ||
+                                            dishDesc.toLowerCase().includes(query);
                                         if (!matchesSearch) return false;
                                     }
 
@@ -887,8 +956,8 @@ function MenuSecondaryContent() {
                             if (filteredDishesByCategory.length === 0) {
                                 return (
                                     <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                                        <p className="text-lg mb-2">Страви не знайдено</p>
-                                        <p className="text-sm">Спробуйте змінити параметри пошуку або фільтри</p>
+                                        <p className="text-lg mb-2">{t('menu.no_dishes_found')}</p>
+                                        <p className="text-sm">{t('menu.try_changing_search')}</p>
                                     </div>
                                 );
                             }
@@ -995,10 +1064,12 @@ function MenuSecondaryContent() {
 }
 
 export default function MenuSecondaryPage() {
+    const { t } = useTranslation();
+    
     return (
         <Suspense fallback={
             <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-                <div className="text-gray-500 dark:text-gray-400">Завантаження...</div>
+                <div className="text-gray-500 dark:text-gray-400">{t('common.loading')}</div>
             </div>
         }>
             <MenuSecondaryContent />

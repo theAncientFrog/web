@@ -2,10 +2,12 @@
 'use client';
 
 import { useTranslation } from 'react-i18next';
+import { useRouter } from 'next/navigation';
 
 export function LocaleSwitcher() {
     const { i18n } = useTranslation();
-    const currentLang = i18n.language;
+    const router = useRouter();
+    const currentLang = i18n?.language || 'ua'; // Fallback на 'ua' якщо undefined
 
     const languages = [
         { code: 'ua', label: 'UA' },
@@ -14,12 +16,16 @@ export function LocaleSwitcher() {
 
     const changeLanguage = (lng) => {
         i18n.changeLanguage(lng);
+        // Оновлюємо cookie для серверних компонентів
+        document.cookie = `i18next=${lng}; path=/; max-age=31536000; SameSite=Lax`;
+        // Оновлюємо сторінку для застосування нової мови до даних з БД
+        router.refresh();
     };
 
     return (
         <div className="flex w-full justify-center rounded-lg bg-gray-200 dark:bg-gray-700 p-1 space-x-1">
             {languages.map((lang) => {
-                const isActive = currentLang.startsWith(lang.code); // .startsWith для ('en-US')
+                const isActive = currentLang && currentLang.startsWith(lang.code); // .startsWith для ('en-US')
                 return (
                     <button
                         key={lang.code}

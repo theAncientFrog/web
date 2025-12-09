@@ -3,13 +3,27 @@
 
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext'; 
+import { useTranslation } from 'react-i18next';
 import Image from 'next/image';
 import { X, Trash2, Minus, Plus } from 'lucide-react';
 import OrderNotificationModal from './OrderNotificationModal';
 
 // 💡 1. Компонент тепер приймає "restaurantId" та "tableNumber" як пропси
 export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }) {
-    const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart(); 
+    const { t, i18n } = useTranslation();
+    const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+    
+    // Визначаємо поточну мову для локалізації назв страв
+    const currentLang = i18n?.language || 'ua';
+    const isEnglish = currentLang.startsWith('en');
+    
+    // Функція для отримання локалізованої назви страви
+    const getLocalizedItemName = (item) => {
+        if (isEnglish && item.nameEn) {
+            return item.nameEn;
+        }
+        return item.name || 'Без назви';
+    }; 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [notification, setNotification] = useState({
@@ -71,10 +85,10 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 throw new Error(data.message || 'Failed to place order');
             }
 
-            // Зберігаємо деталі замовлення перед очищенням кошика
+            // Зберігаємо деталі замовлення перед очищенням кошика (з локалізованими назвами)
             const orderDetails = {
                 items: cartItems.map(item => ({
-                    name: item.name,
+                    name: getLocalizedItemName(item),
                     quantity: item.quantity,
                     price: item.price,
                 })),
@@ -139,11 +153,11 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 {/* modalTitle */}
                 <div className="p-4 sm:p-6 pb-0">
                     <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                        Ваш Кошик
+                        {t('common.cart')}
                     </h2>
                     {tableNumber && tableNumber.trim() !== '' && (
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Столик {tableNumber}
+                            {t('menu.table_number')} {tableNumber}
                         </p>
                     )}
                 </div>
@@ -152,7 +166,7 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 <div className="p-4 sm:p-6 overflow-y-auto flex-grow">
                     {/* cartItemsList */}
                     {cartItems.length === 0 ? (
-                        <p className="text-center text-gray-500 dark:text-gray-400 py-8">Ваш кошик порожній.</p>
+                        <p className="text-center text-gray-500 dark:text-gray-400 py-8">{t('common.cart_empty')}</p>
                     ) : (
                         <div className="max-h-[40vh] overflow-y-auto pr-2">
                             {cartItems.map((item) => (
@@ -162,7 +176,7 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                                     <div className="flex-shrink-0">
                                         <Image
                                             src={item.imageUrl || '/images/placeholder.jpg'}
-                                            alt={item.name}
+                                            alt={getLocalizedItemName(item)}
                                             width={50}
                                             height={50}
                                             className="rounded-lg object-cover w-12 h-12 sm:w-[50px] sm:h-[50px]"
@@ -170,8 +184,8 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                                     </div>
                                     {/* cartItemDetails */}
                                     <div className="flex-grow text-left overflow-hidden min-w-0">
-                                        <span className="block font-medium mb-1 text-xs sm:text-sm truncate text-gray-900 dark:text-white">{item.name}</span>
-                                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{item.price} грн</span>
+                                        <span className="block font-medium mb-1 text-xs sm:text-sm truncate text-gray-900 dark:text-white">{getLocalizedItemName(item)}</span>
+                                        <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{item.price} {t('menu.currency')}</span>
                                     </div>
                                     {/* cartItemQuantity */}
                                     <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
@@ -216,8 +230,8 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                     <div className="border-t border-gray-200 dark:border-gray-700 pt-4 sm:pt-6 p-4 sm:p-6 flex-shrink-0">
                         {/* cartTotal */}
                         <div className="flex justify-between text-base sm:text-lg font-bold mb-4 sm:mb-6 text-gray-900 dark:text-white">
-                            <span>Разом:</span>
-                            <span>{cartTotal.toFixed(2)} грн</span>
+                            <span>{t('common.total')}:</span>
+                            <span>{cartTotal.toFixed(2)} {t('menu.currency')}</span>
                         </div>
                         {/* Кнопка "Замовити" (зелена) */}
                         <button
@@ -225,7 +239,7 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                             onClick={handlePlaceOrder}
                             disabled={isLoading}
                         >
-                            {isLoading ? 'Оформлення...' : 'Замовити'}
+                            {isLoading ? t('common.processing') : t('common.order')}
                         </button>
                     </div>
                 )}

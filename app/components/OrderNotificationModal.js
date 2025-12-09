@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, X, Clock, Package } from 'lucide-react';
 
 export default function OrderNotificationModal({ 
@@ -13,6 +14,18 @@ export default function OrderNotificationModal({
     orderDetails,
     autoCloseDelay = 5000
 }) {
+    const { t, i18n } = useTranslation();
+    const currentLang = i18n?.language || 'ua';
+    const isEnglish = currentLang.startsWith('en');
+    
+    // Функція для отримання локалізованої назви страви
+    const getLocalizedItemName = (item) => {
+        if (isEnglish && item.nameEn) {
+            return item.nameEn;
+        }
+        return item.name || 'Без назви';
+    };
+    
     useEffect(() => {
         if (isOpen && autoCloseDelay > 0) {
             const timer = setTimeout(() => {
@@ -68,11 +81,11 @@ export default function OrderNotificationModal({
                         {getIcon()}
                         <div className="flex-1">
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                                {title || 'Сповіщення'}
+                                {title || t('common.notification')}
                             </h3>
                             {orderId && (
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                    Замовлення №{orderId}
+                                    {t('common.order')} №{orderId}
                                 </p>
                             )}
                         </div>
@@ -95,7 +108,7 @@ export default function OrderNotificationModal({
                 {orderDetails && (orderDetails.items || orderDetails.totalPrice || orderDetails.tableNumber) && (
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                            Деталі замовлення:
+                            {t('common.order_details')}:
                         </h4>
                         <div className="space-y-2">
                             {orderDetails.items && Array.isArray(orderDetails.items) && orderDetails.items.length > 0 && (
@@ -103,16 +116,16 @@ export default function OrderNotificationModal({
                                     {orderDetails.items.slice(0, 3).map((item, index) => (
                                         <div key={index} className="flex justify-between text-sm">
                                             <span className="text-gray-600 dark:text-gray-400">
-                                                {item.quantity}x {item.name}
+                                                {item.quantity}x {getLocalizedItemName(item)}
                                             </span>
                                             <span className="text-gray-900 dark:text-white font-medium">
-                                                {item.price ? (item.price * item.quantity).toFixed(2) : '0.00'} грн
+                                                {item.price ? (item.price * item.quantity).toFixed(2) : '0.00'} {t('menu.currency')}
                                             </span>
                                         </div>
                                     ))}
                                     {orderDetails.items.length > 3 && (
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                            +{orderDetails.items.length - 3} інших позицій
+                                            +{orderDetails.items.length - 3} {t('common.more_items')}
                                         </p>
                                     )}
                                 </div>
@@ -120,16 +133,16 @@ export default function OrderNotificationModal({
                             {orderDetails.totalPrice && (
                                 <div className={`pt-2 ${orderDetails.items && orderDetails.items.length > 0 ? 'border-t border-gray-200 dark:border-gray-700' : ''} flex justify-between items-center`}>
                                     <span className="font-semibold text-gray-900 dark:text-white">
-                                        Всього:
+                                        {t('common.total')}:
                                     </span>
                                     <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                        {typeof orderDetails.totalPrice === 'number' ? orderDetails.totalPrice.toFixed(2) : orderDetails.totalPrice} грн
+                                        {typeof orderDetails.totalPrice === 'number' ? orderDetails.totalPrice.toFixed(2) : orderDetails.totalPrice} {t('menu.currency')}
                                     </span>
                                 </div>
                             )}
                             {orderDetails.tableNumber && (
                                 <div className="pt-2 text-sm">
-                                    <span className="text-gray-600 dark:text-gray-400">Столик: </span>
+                                    <span className="text-gray-600 dark:text-gray-400">{t('menu.table_number')}: </span>
                                     <span className="font-semibold text-gray-900 dark:text-white">
                                         {orderDetails.tableNumber}
                                     </span>
@@ -144,7 +157,7 @@ export default function OrderNotificationModal({
                     onClick={onClose}
                     className="w-full py-3 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-lg font-semibold transition-colors duration-200"
                 >
-                    Зрозуміло
+                    {t('common.understood')}
                 </button>
             </div>
         </div>

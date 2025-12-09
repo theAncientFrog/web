@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTranslation } from 'react-i18next';
 
 // Припускаємо, що цей тип приходить з API /api/partners/
 /**
@@ -38,6 +39,7 @@ const StarRating = ({ rating }) => {
  * @param {RestaurantPreview} props.restaurant
  */
 export default function RestaurantCard({ restaurant }) {
+    const { t } = useTranslation();
     
     // Заглушки
     const defaultBanner = '/images/default_banner.jpg'; 
@@ -79,10 +81,10 @@ export default function RestaurantCard({ restaurant }) {
                 <h2 className="text-lg sm:text-xl font-bold mb-1 text-gray-900 dark:text-white line-clamp-1">{restaurant.name}</h2>
                 
                 {/* Опис */}
-                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 line-clamp-2">{restaurant.description || 'A warm and welcoming place for coffee lovers'}</p>
+                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 line-clamp-2">{restaurant.description || ''}</p>
                 
                 {/* Адреса */}
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 sm:mb-3 line-clamp-1">{restaurant.address || 'Адреса не вказана.'}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 sm:mb-3 line-clamp-1">{restaurant.address || t('menu.address_missing')}</p>
                 
                 {/* Рейтинг */}
                 <StarRating rating={rating} /> 

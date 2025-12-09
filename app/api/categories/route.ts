@@ -1,6 +1,7 @@
 // app/api/categories/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getLocaleFromRequest, localizeEntities, type SupportedLocale } from '@/lib/i18n-helpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,38 +12,42 @@ export async function GET(request: Request) {
 
     if (!restaurantId) {
       return NextResponse.json(
-        { error: 'restaurantId is required' },
+        { error: 'Необхідно вказати "restaurantId"' },
         { status: 400 }
       );
     }
 
-    const numericRestaurantId = parseInt(restaurantId);
-    if (isNaN(numericRestaurantId)) {
-      return NextResponse.json(
-        { error: 'Invalid restaurantId' },
-        { status: 400 }
-      );
-    }
+    // Визначаємо локаль з запиту
+    const locale = getLocaleFromRequest(request);
 
-    console.log(`[Categories API] Fetching categories for restaurantId: ${numericRestaurantId}`);
+    const numericRestaurantId = Number(restaurantId);
 
-    // Отримуємо всі головні категорії (parentId === null) з підкатегоріями
+    // Отримуємо головні категорії з підкатегоріями
     const mainCategories = await prisma.category.findMany({
       where: {
         restaurantId: numericRestaurantId,
         parentId: null, // Тільки головні категорії
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        nameEn: true, // Додано для локалізації
+        description: true,
+        descriptionEn: true, // Додано для локалізації
+        type: true,
         subcategories: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            nameEn: true,
+            description: true,
+            descriptionEn: true,
+            type: true,
             _count: {
               select: {
                 dishes: true,
               },
             },
-          },
-          orderBy: {
-            name: 'asc',
           },
         },
         _count: {
@@ -52,28 +57,41 @@ export async function GET(request: Request) {
         },
       },
       orderBy: {
-        name: 'asc',
+        type: 'asc',
       },
     });
 
-    console.log(`[Categories API] Found ${mainCategories.length} main categories`);
+    // Форматуємо відповідь з локалізацією
+    const formattedCategories = mainCategories.map((category) => {
+      // Локалізуємо головну категорію
+      const localizedMain = localizeEntities([category], locale)[0];
+      
+      // Локалізуємо підкатегорії
+      const localizedSubs = localizeEntities(category.subcategories, locale);
 
-    // Форматуємо відповідь
-    const formattedCategories = mainCategories.map((category) => ({
-      id: category.id,
-      name: category.name,
-      description: category.description,
-      type: category.type,
-      subcategories: category.subcategories.map((sub) => ({
-        id: sub.id,
-        name: sub.name,
-        description: sub.description,
-        dishCount: sub._count.dishes,
-      })),
-      dishCount: category._count.dishes,
-    }));
+      return {
+        id: category.id,
+        name: localizedMain.name,
+        description: localizedMain.description,
+        type: category.type,
+        subcategories: localizedSubs.map((sub) => ({
+          id: sub.id,
+          name: sub.name,
+          description: sub.description,
+          dishCount: category.subcategories.find(s => s.id === sub.id)?._count.dishes || 0,
+        })),
+        dishCount: category._count.dishes,
+      };
+    });
 
-    return NextResponse.json(formattedCategories, { status: 200 });
+    return NextResponse.json(formattedCategories, {
+      status: 200,
+      headers: {
+        'Content-Language': locale,
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Vary': 'Accept-Language, x-lang',
+      }
+    });
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(

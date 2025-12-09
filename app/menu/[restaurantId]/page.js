@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import Image from 'next/image';
 import { Settings, ArrowLeft, Utensils, Coffee, Wine, Package, User } from 'lucide-react';
 import ProfileModal from '../../components/ProfileModal';
@@ -17,8 +18,9 @@ import TableNumberInputModal from '../../components/TableNumberInputModal';
 import MyReservationsModal from '../../components/MyReservationsModal';
 import Footer from '../../components/Footer';
 
-// Мапування іконок для категорій
+// Мапування іконок для категорій (підтримує обидві мови)
 const CATEGORY_ICONS = {
+    // Українські назви
     'Їжа': Utensils,
     'Кухня': Utensils,
     'Напої': Coffee,
@@ -31,6 +33,17 @@ const CATEGORY_ICONS = {
     'Випічка': Package,
     'Десерти': Package,
     'Снеки': Package,
+    // Англійські назви
+    'Food': Utensils,
+    'Beverages': Coffee,
+    'Alcoholic Beverages': Wine,
+    'Merchandise': Package,
+    'Coffee': Coffee,
+    'Tea': Coffee,
+    'Soft Drinks': Coffee,
+    'Beer': Wine,
+    'Wines': Wine,
+    'Cocktails': Wine,
     // Додайте інші категорії за потребою
 };
 
@@ -39,6 +52,9 @@ const getIconForCategory = (categoryName) => {
 };
 
 export default function MenuPage() {
+    const { t, i18n } = useTranslation();
+    const currentLang = i18n.language || 'ua';
+    const isEnglish = currentLang.startsWith('en');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
@@ -74,7 +90,14 @@ export default function MenuPage() {
         // Ми залишаємо цю логіку, щоб завантажити дані для картки ресторану
         if (restaurantId) { // Завантажуємо, навіть якщо юзер не залогінений
             setIsLoadingData(true);
-            fetch(`/api/menu/${restaurantId}`)
+            // Додаємо локаль до запиту
+            const langParam = isEnglish ? '?lang=en' : '?lang=ua';
+            fetch(`/api/menu/${restaurantId}${langParam}`, {
+                headers: {
+                    'x-lang': isEnglish ? 'en' : 'ua',
+                    'Accept-Language': isEnglish ? 'en' : 'ua',
+                }
+            })
                 .then(res => res.json())
                 .then(data => {
                     setRestaurant(data);
@@ -86,7 +109,7 @@ export default function MenuPage() {
                     setIsLoadingData(false);
                 });
         }
-    }, [restaurantId]);
+    }, [restaurantId, isEnglish]);
 
 
     // 💡 --- 2. ДОДАНО ЛОГІКУ ЗАВАНТАЖЕННЯ РІВНЯ ---
@@ -114,12 +137,20 @@ export default function MenuPage() {
     useEffect(() => {
         if (restaurantId) {
             setIsLoadingCategories(true);
-            fetch(`/api/categories?restaurantId=${restaurantId}`)
+            // Додаємо локаль до запиту
+            const langParam = isEnglish ? '&lang=en' : '&lang=ua';
+            fetch(`/api/categories?restaurantId=${restaurantId}${langParam}`, {
+                headers: {
+                    'x-lang': isEnglish ? 'en' : 'ua',
+                    'Accept-Language': isEnglish ? 'en' : 'ua',
+                }
+            })
                 .then(res => res.json())
                 .then(data => {
                     // Форматуємо категорії для відображення
+                    // API вже повертає локалізовані дані (без nameEn), тому просто використовуємо name
                     const formattedCategories = data.map(category => ({
-                        name: category.name,
+                        name: category.name, // Вже локалізована назва
                         icon: getIconForCategory(category.name),
                         link: category.name, // Використовуємо ім'я як посилання
                     }));
@@ -133,7 +164,7 @@ export default function MenuPage() {
                     setIsLoadingCategories(false);
                 });
         }
-    }, [restaurantId]);
+    }, [restaurantId, isEnglish]); // Додаємо isEnglish для перезавантаження при зміні мови
     // --- КІНЕЦЬ ---
 
 
@@ -141,7 +172,7 @@ export default function MenuPage() {
     if (status === "loading" || isLoadingData || isLoadingLoyalty || isLoadingCategories) {
         return (
             <main className="w-full min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 justify-center items-center">
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Завантаження меню...</div>
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">{t('menu.loading')}</div>
             </main>
         );
     }
@@ -233,7 +264,7 @@ export default function MenuPage() {
                             <div className="flex-grow overflow-hidden">
                                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{name || 'NAZVA'}</h2>
                                 <p className="mt-0.5 mb-1 text-yellow-500 dark:text-yellow-400 text-sm">{restaurantRating}</p>
-                                <span className="text-sm text-gray-500 dark:text-gray-400 truncate block">{address || 'Адреса відсутня'}</span>
+                                <span className="text-sm text-gray-500 dark:text-gray-400 truncate block">{address || t('menu.address_missing')}</span>
                             </div>
                             {/* 💡 --- 3. ОНОВЛЕНО РІВЕНЬ --- */}
                             {status === 'authenticated' && (
@@ -247,13 +278,13 @@ export default function MenuPage() {
                                             onClick={() => setIsReservationModalOpen(true)}
                                             className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition whitespace-nowrap"
                                         >
-                                            Бронювання столиків
+                                            {t('menu.reservation')}
                                         </button>
                                         <button
                                             onClick={() => setIsMyReservationsModalOpen(true)}
                                             className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/50 transition whitespace-nowrap"
                                         >
-                                            Мої бронювання
+                                            {t('menu.my_reservations')}
                                         </button>
                                     </div>
                                 </div>
@@ -303,7 +334,7 @@ export default function MenuPage() {
                     </div>
                     ) : (
                         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                            Категорії не знайдено
+                            {t('menu.categories_not_found')}
                         </div>
                     )}
                 </div>

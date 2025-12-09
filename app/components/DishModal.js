@@ -4,11 +4,20 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Plus, Send, User } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
 
 export default function DishModal({ isOpen, onClose, dish, restaurantId, discount = 0 }) {
+    const { t, i18n } = useTranslation();
     const { data: session, status: sessionStatus } = useSession();
     const { addToCart } = useCart();
+    
+    // Визначаємо поточну мову та вибираємо відповідні назви/описи
+    // API вже повертає локалізовані дані (без nameEn, descriptionEn, allergensEn)
+    // Тому просто використовуємо name, description, allergens, які вже містять правильну мову
+    const dishName = dish?.name || '';
+    const dishDescription = dish?.description || null;
+    const dishAllergens = dish?.allergens || '';
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [isLoadingComments, setIsLoadingComments] = useState(false);
@@ -100,7 +109,7 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
         addToCart(
             {
                 id: dish.id,
-                name: dish.name,
+                name: dishName,
                 price: originalPrice,
                 imageUrl: dish.imageUrl || '/images/placeholder.jpg',
             },
@@ -127,7 +136,7 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{dish.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{dishName}</h2>
                     <button
                         onClick={onClose}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition"
@@ -142,7 +151,7 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                     <div className="relative w-full h-64 mb-6 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
                         <Image
                             src={dish.imageUrl || '/images/placeholder.jpg'}
-                            alt={dish.name}
+                            alt={dishName}
                             fill
                             className="object-cover"
                             sizes="(max-width: 768px) 100vw, 672px"
@@ -150,9 +159,9 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                     </div>
 
                     {/* Опис */}
-                    {dish.description && (
+                    {dishDescription && (
                         <p className="text-gray-700 dark:text-gray-300 mb-4">
-                            {dish.description}
+                            {dishDescription}
                         </p>
                     )}
 
@@ -160,16 +169,16 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                     <div className="mb-6 space-y-3">
                         {hasCalories && showCalories && (
                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                                <span className="font-medium">Калорійність:</span>
-                                <span>{dish.calories} ккал</span>
+                                <span className="font-medium">{t('menu.calories_label')}:</span>
+                                <span>{dish.calories} {t('menu.kcal')}</span>
                             </div>
                         )}
                         
-                        {hasAllergens && showAllergens && (
+                        {hasAllergens && showAllergens && dishAllergens && (
                             <div className="flex flex-col gap-2">
-                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">Алергени:</span>
+                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">{t('menu.allergens_label')}:</span>
                                 <div className="flex flex-wrap gap-2">
-                                    {dish.allergens.split(',').map((allergen, index) => (
+                                    {dishAllergens.split(',').map((allergen, index) => (
                                         <span
                                             key={index}
                                             className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800"
@@ -187,10 +196,10 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                         {discount > 0 ? (
                             <div className="flex items-center gap-3">
                                 <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                                    {discountedPrice.toFixed(2)} грн
+                                    {discountedPrice.toFixed(2)} {t('menu.currency')}
                                 </span>
                                 <span className="text-lg text-gray-500 dark:text-gray-400 line-through">
-                                    {originalPrice.toFixed(2)} грн
+                                    {originalPrice.toFixed(2)} {t('menu.currency')}
                                 </span>
                                 <span className="text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
                                     -{discount}%
@@ -198,7 +207,7 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                             </div>
                         ) : (
                             <span className="text-3xl font-bold text-gray-900 dark:text-white">
-                                {originalPrice.toFixed(2)} грн
+                                {originalPrice.toFixed(2)} {t('menu.currency')}
                             </span>
                         )}
                     </div>
