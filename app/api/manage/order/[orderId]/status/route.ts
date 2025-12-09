@@ -4,6 +4,7 @@ import Pusher from 'pusher';
 import { prisma } from '@/lib/prisma';
 import { authOptions } from '@/lib/auth.config';
 import { getServerSession } from 'next-auth/next';
+import { checkAndAwardAchievements } from '@/lib/achievementService';
 
 // Вказуємо Next.js, що цей роут завжди динамічний (для Vercel)
 export const dynamic = 'force-dynamic';
@@ -111,6 +112,15 @@ export async function PUT(
         }
         // --- КІНЕЦЬ ЛОГІКИ XP ---
 
+        // 💡 --- 5.5. ПЕРЕВІРКА АЧІВОК ПРИ ЗАВЕРШЕННІ ЗАМОВЛЕННЯ ---
+        if (newStatus === 'COMPLETED') {
+            console.log(`[Order Status] 🎯 Замовлення ${orderId} завершено. Перевіряємо ачівки для користувача ${updatedOrder.userId}`);
+            // Перевіряємо та видаємо ачівки в фоновому режимі
+            checkAndAwardAchievements(updatedOrder.userId).catch(err => {
+                console.error(`[Achievements] ❌ Помилка при перевірці ачівок для користувача ${updatedOrder.userId}:`, err);
+            });
+        }
+        // --- КІНЕЦЬ ЛОГІКИ АЧІВОК ---
 
         // 6. Надсилання сповіщення клієнту (колишній крок 5)
         const pusherInstance = getPusher();

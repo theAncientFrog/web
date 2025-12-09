@@ -391,7 +391,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                 <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg text-center text-gray-500 text-sm mb-4">
                     Завантаження...
                 </div>
-            ) : achievements.length > 0 ? (
+            ) : achievements && achievements.length > 0 ? (
                 // Показуємо іконки, якщо ачівки є
                 <div className="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg flex justify-center space-x-3">
                     {/* Беремо перші 4 найновіші ачівки */}

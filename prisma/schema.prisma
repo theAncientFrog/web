@@ -39,6 +39,7 @@ model User {
   userRestaurantStats UserRestaurantStats[]
   comments    Comment[]
   reservations Reservation[]
+  userAchievements UserAchievement[]
 }
 
 // --- НОВІ МОДЕЛІ ДЛЯ NEXT-AUTH ---
@@ -181,7 +182,22 @@ model Achievement {
   code        String @unique
   name        String
   description String
-  iconUrl     String
+  iconUrl     String?
+  userAchievements UserAchievement[]
+}
+
+model UserAchievement {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  achievementId Int
+  unlockedAt   DateTime  @default(now())
+  
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement  Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, achievementId])
+  @@index([userId])
+  @@index([achievementId])
 }
 
 model Comment {
