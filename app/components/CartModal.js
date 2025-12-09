@@ -42,6 +42,13 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
             return;
         }
 
+        // Перевірка, чи є номер столика (обов'язково для замовлення)
+        if (!tableNumber || tableNumber.trim() === '') {
+            setError('Для оформлення замовлення необхідно відсканувати QR код столика');
+            setIsLoading(false);
+            return;
+        }
+
         // Діагностика: логування tableNumber перед відправкою
         console.log('[CartModal] Відправка замовлення з tableNumber:', tableNumber);
 

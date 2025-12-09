@@ -44,44 +44,57 @@ export async function GET() {
             },
         });
 
+        // Якщо немає ресторанів, повертаємо порожній масив
+        if (restaurants.length === 0) {
+            return NextResponse.json([], { status: 200 });
+        }
+
         // 4. ДОДАЄМО СТАТИСТИКУ ДЛЯ КОЖНОГО РЕСТОРАНУ
-        const restaurantsWithStats = await Promise.all(
-            restaurants.map(async (restaurant) => {
-                // Підрахунок головних категорій (тільки батьківські категорії)
-                const categoriesCount = await prisma.category.count({
-                    where: {
-                        restaurantId: restaurant.id,
-                        parentId: null, // Тільки головні категорії
-                    },
-                });
+        // Оптимізуємо запити: використовуємо один запит для всіх ресторанів замість багатьох паралельних
+        const restaurantIds = restaurants.map(r => r.id);
+        
+        // Отримуємо всі категорії для всіх ресторанів одним запитом
+        const allCategories = await prisma.category.findMany({
+            where: {
+                restaurantId: { in: restaurantIds },
+                parentId: null,
+            },
+            select: {
+                restaurantId: true,
+            },
+        });
 
-                // Підрахунок всіх замовлень
-                const ordersCount = await prisma.order.count({
-                    where: {
-                        restaurantId: restaurant.id,
-                    },
-                });
+        // Отримуємо всі замовлення для всіх ресторанів одним запитом
+        const allOrders = await prisma.order.findMany({
+            where: {
+                restaurantId: { in: restaurantIds },
+            },
+            select: {
+                restaurantId: true,
+                totalPrice: true,
+            },
+        });
 
-                // Підрахунок виручки (сума всіх замовлень)
-                const revenueResult = await prisma.order.aggregate({
-                    where: {
-                        restaurantId: restaurant.id,
-                    },
-                    _sum: {
-                        totalPrice: true,
-                    },
-                });
+        // Групуємо дані по ресторанах
+        const categoriesByRestaurant = {};
+        allCategories.forEach(cat => {
+            categoriesByRestaurant[cat.restaurantId] = (categoriesByRestaurant[cat.restaurantId] || 0) + 1;
+        });
 
-                const revenue = revenueResult._sum.totalPrice || 0;
+        const ordersByRestaurant = {};
+        const revenueByRestaurant = {};
+        allOrders.forEach(order => {
+            ordersByRestaurant[order.restaurantId] = (ordersByRestaurant[order.restaurantId] || 0) + 1;
+            revenueByRestaurant[order.restaurantId] = (revenueByRestaurant[order.restaurantId] || 0) + (order.totalPrice || 0);
+        });
 
-                return {
-                    ...restaurant,
-                    categoriesCount,
-                    ordersCount,
-                    revenue,
-                };
-            })
-        );
+        // Формуємо результат
+        const restaurantsWithStats = restaurants.map(restaurant => ({
+            ...restaurant,
+            categoriesCount: categoriesByRestaurant[restaurant.id] || 0,
+            ordersCount: ordersByRestaurant[restaurant.id] || 0,
+            revenue: revenueByRestaurant[restaurant.id] || 0,
+        }));
 
         return NextResponse.json(restaurantsWithStats, { status: 200 });
 

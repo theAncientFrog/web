@@ -39,8 +39,13 @@ export default function SignupPage() {
                 throw new Error(data.message || 'Failed to sign up'); // Використовуємо 'message' з API
             }
 
-            // 3. УСПІХ: Перекидаємо на сторінку верифікації з email
-            router.push(`/verify-email?email=${email}`);
+            // 3. УСПІХ: Перекидаємо на сторінку верифікації з email та table (якщо є)
+            const tableParam = searchParams.get('table');
+            const restaurantParam = searchParams.get('restaurantId');
+            let verifyUrl = `/verify-email?email=${email}`;
+            if (tableParam) verifyUrl += `&table=${tableParam}`;
+            if (restaurantParam) verifyUrl += `&restaurantId=${restaurantParam}`;
+            router.push(verifyUrl);
 
         } catch (err) {
             setError(err.message);

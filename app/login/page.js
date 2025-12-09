@@ -33,10 +33,19 @@ export default function LoginPage() {
             const updatedSession = await update();
             const userRole = updatedSession?.user?.role || session?.user?.role;
             
+            // Перевіряємо, чи є параметр table в URL (з QR коду)
+            const tableParam = searchParams.get('table');
+            const restaurantParam = searchParams.get('restaurantId');
+            
             if (userRole === 'OWNER') {
                 router.push('/manage/restaurants'); 
             } else {
-                router.push('/homepage');
+                // Якщо логін був через QR код, перекидаємо на меню з параметром table
+                if (tableParam && restaurantParam) {
+                    router.push(`/menu-secondary/${restaurantParam}?table=${tableParam}`);
+                } else {
+                    router.push('/homepage');
+                }
             }
         }
     };

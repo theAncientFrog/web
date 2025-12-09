@@ -37,6 +37,7 @@ model User {
   orders      Order[]
   userRestaurantStats UserRestaurantStats[]
   comments    Comment[]
+  reservations Reservation[]
 }
 
 // --- НОВІ МОДЕЛІ ДЛЯ NEXT-AUTH ---
@@ -110,6 +111,8 @@ model Restaurant {
   categories  Category[]
   orders      Order[]
   userRestaurantStats UserRestaurantStats[]
+  tables      Table[]
+  reservations Reservation[]
 }
 model Category {
   id           Int     @id @default(autoincrement())
@@ -190,5 +193,44 @@ model Comment {
   dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
 
   @@index([dishId])
+  @@index([userId])
+}
+
+enum TableStatus {
+  FREE      // Вільний
+  OCCUPIED  // Зайнятий
+  RESERVED  // Заброньований
+}
+
+model Table {
+  id           Int         @id @default(autoincrement())
+  number       String      // Номер столика (може бути будь-який формат: "1", "A1", "VIP-1" тощо)
+  qrCodeUrl    String?     // URL QR коду (генерується на сервері)
+  status       TableStatus @default(FREE) // Статус столика
+  restaurantId Int
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@unique([restaurantId, number])
+}
+
+model Reservation {
+  id           Int      @id @default(autoincrement())
+  tableId      Int
+  table        Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       Int?     // ID користувача, який створив бронювання (опціонально для гостей)
+  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  reservedAt   DateTime // Час на який заброньовано
+  createdAt    DateTime @default(now())
+  customerName String?  // Ім'я клієнта (опціонально)
+  customerPhone String? // Телефон клієнта (опціонально)
+  notes        String?  // Додаткові нотатки
+
+  @@index([restaurantId])
+  @@index([tableId])
   @@index([userId])
 }

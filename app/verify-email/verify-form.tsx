@@ -44,7 +44,17 @@ export default function VerifyEmailForm() {
 
             setMessage(data.message);
             setTimeout(() => {
-                router.push('/login');
+                // Перевіряємо, чи є параметр table в URL (з QR коду)
+                const tableParam = searchParams.get('table');
+                const restaurantParam = searchParams.get('restaurantId');
+                
+                if (tableParam && restaurantParam) {
+                    // Якщо реєстрація була через QR код, перекидаємо на меню з параметром table
+                    router.push(`/menu-secondary/${restaurantParam}?table=${tableParam}`);
+                } else {
+                    // Інакше перекидаємо на логін
+                    router.push('/login');
+                }
             }, 3000);
 
         } catch (err: any) {

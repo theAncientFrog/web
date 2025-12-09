@@ -23,6 +23,9 @@ import ProfileModal from '../../components/ProfileModal';
 import CartModal from '../../components/CartModal';
 import MyOrdersModal from '../../components/MyOrdersModal';
 import MenuSettingsModal from '../../components/MenuSettingsModal';
+import TableReservationModal from '../../components/TableReservationModal';
+import TableNumberInputModal from '../../components/TableNumberInputModal';
+import MyReservationsModal from '../../components/MyReservationsModal';
 import Footer from '../../components/Footer';
 import MenuItem from '../../components/MenuItem';
 
@@ -42,6 +45,9 @@ function MenuSecondaryContent() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isOrdersOpen, setIsOrdersOpen] = useState(false);
     const [isMenuSettingsOpen, setIsMenuSettingsOpen] = useState(false);
+    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+    const [isTableNumberModalOpen, setIsTableNumberModalOpen] = useState(false);
+    const [isMyReservationsModalOpen, setIsMyReservationsModalOpen] = useState(false);
     const [loyalty, setLoyalty] = useState({ level: 1, progress: 0 });
     const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(true);
     const [categoryLevels, setCategoryLevels] = useState({}); // { categoryId: { level, progress } }
@@ -384,6 +390,23 @@ function MenuSecondaryContent() {
                 tableNumber={tableNumber || null}
             />
             <MyOrdersModal isOpen={isOrdersOpen} onClose={() => setIsOrdersOpen(false)} restaurantId={restaurantId} />
+            
+            <TableReservationModal 
+                isOpen={isReservationModalOpen} 
+                onClose={() => setIsReservationModalOpen(false)} 
+                restaurantId={restaurantId}
+            />
+            
+            <TableNumberInputModal 
+                isOpen={isTableNumberModalOpen} 
+                onClose={() => setIsTableNumberModalOpen(false)} 
+                restaurantId={restaurantId}
+            />
+            
+            <MyReservationsModal 
+                isOpen={isMyReservationsModalOpen} 
+                onClose={() => setIsMyReservationsModalOpen(false)} 
+            />
 
             <div className="min-h-screen bg-white dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100">
                 {/* Header з лого, назвою та описом */}
@@ -417,29 +440,58 @@ function MenuSecondaryContent() {
                                         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-1">{description}</p>
                                     )}
                                     {address && (
-                                        <p className="text-xs text-gray-500 dark:text-gray-500 line-clamp-1">{address}</p>
+                                        <p className="text-xs text-gray-700 dark:text-gray-400 line-clamp-1">{address}</p>
                                     )}
                                 </div>
                             </div>
 
                             {/* Права частина: рівень закладу + іконки */}
                             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                                {/* Рівень закладу */}
-                                {status === 'authenticated' && (
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        <div className="text-right flex-shrink-0">
-                                            <span className="text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400 block whitespace-nowrap">
-                                                lvl. {loyalty.level}
-                                            </span>
-                                            <div className="w-16 sm:w-20 h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-0.5 sm:mt-1">
-                                                <div 
-                                                    className="bg-green-500 dark:bg-green-600 h-full rounded-full" 
-                                                    style={{ width: `${loyalty.progress}%` }}
-                                                ></div>
+                                        {/* Рівень закладу */}
+                                        {status === 'authenticated' && (
+                                            <div className="flex flex-col items-end gap-1 sm:gap-2">
+                                                <div className="text-right flex-shrink-0">
+                                                    <span className="text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400 block whitespace-nowrap">
+                                                        lvl. {loyalty.level}
+                                                    </span>
+                                                    <div className="w-16 sm:w-20 h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-0.5 sm:mt-1">
+                                                        <div 
+                                                            className="bg-green-500 dark:bg-green-600 h-full rounded-full" 
+                                                            style={{ width: `${loyalty.progress}%` }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                                {/* Кнопки для роботи зі столиками - під рівнем */}
+                                                <div className="flex flex-col gap-1">
+                                                    {!tableNumber && (
+                                                        <button
+                                                            onClick={() => setIsTableNumberModalOpen(true)}
+                                                            className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition whitespace-nowrap"
+                                                            title="Ввести номер столика вручну"
+                                                        >
+                                                            Ввести номер столика
+                                                        </button>
+                                                    )}
+                                                    {tableNumber && (
+                                                        <div className="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md whitespace-nowrap">
+                                                            Столик {tableNumber}
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={() => setIsReservationModalOpen(true)}
+                                                        className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition whitespace-nowrap"
+                                                    >
+                                                        Бронювання столиків
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setIsMyReservationsModalOpen(true)}
+                                                        className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/50 transition whitespace-nowrap"
+                                                    >
+                                                        Мої бронювання
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                )}
+                                        )}
 
                                 {/* Іконки */}
                                 <div className="flex items-center gap-1 sm:gap-2">
@@ -884,7 +936,7 @@ function MenuSecondaryContent() {
                                                     <div className="flex items-center justify-between mb-2 gap-2">
                                                         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate flex-1">
                                                             {categoryData.categoryName}
-                                                            <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                                                            <span className="ml-2 text-sm font-normal text-gray-700 dark:text-gray-300">
                                                                 ({categoryData.dishes.length})
                                                             </span>
                                                         </h2>
@@ -896,7 +948,7 @@ function MenuSecondaryContent() {
                                                                 // Якщо немає даних, показуємо рівень 1
                                                                 return (
                                                                     <div className="flex items-center gap-3">
-                                                                        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                                                                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                                                                             lvl. 1
                                                                         </span>
                                                                     </div>
@@ -930,7 +982,7 @@ function MenuSecondaryContent() {
                                                                         style={{ width: `${progress}%` }}
                                                                     ></div>
                                                                 </div>
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                                <span className="text-xs text-gray-700 dark:text-gray-300">
                                                                     {progress}%
                                                                 </span>
                                                             </div>

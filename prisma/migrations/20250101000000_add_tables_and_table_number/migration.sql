@@ -20,3 +20,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS "Table_restaurantId_number_key" ON "Table"("re
 ALTER TABLE "Table" ADD CONSTRAINT IF NOT EXISTS "Table_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 
+
+
+
+
+

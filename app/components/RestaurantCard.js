@@ -57,9 +57,8 @@ export default function RestaurantCard({ restaurant }) {
                 <Image
                     src={restaurant.bannerUrl || defaultBanner}
                     alt={`Banner for ${restaurant.name}`}
-                    layout="fill"
-                    objectFit="cover"
-                    className="absolute inset-0"
+                    fill
+                    className="object-cover"
                 />
                 
                 {/* 2. Логотип (зліва вгорі, в кругу) - Імітуємо дизайн зі скріншота */}

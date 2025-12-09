@@ -34,7 +34,6 @@ export default withAuth(
 export const config = {
     matcher: [
         '/manage/:path*', // Всі сторінки, що починаються з /manage
-        '/menu/:path*', // Також захищаємо сторінки меню
-        '/menu-secondary/:path*',
+        // Прибрано /menu/:path* та /menu-secondary/:path* - меню має бути доступним для всіх
     ],
 };

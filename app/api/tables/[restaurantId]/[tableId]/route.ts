@@ -41,6 +41,7 @@ export async function DELETE(
         }
 
         // Перевірка, чи столик належить ресторану
+        // @ts-ignore - Table модель додано в схему Prisma, TypeScript може не бачити оновлений тип
         const table = await prisma.table.findUnique({
             where: { id: numericTableId },
             select: { restaurantId: true }
@@ -54,6 +55,7 @@ export async function DELETE(
             return NextResponse.json({ message: 'Столик не належить цьому ресторану' }, { status: 403 });
         }
 
+        // Повне видалення столика з БД (включаючи всі пов'язані записи через onDelete: Cascade)
         // @ts-ignore - Table модель додано в схему Prisma, TypeScript може не бачити оновлений тип
         await prisma.table.delete({
             where: { id: numericTableId }
@@ -85,7 +87,48 @@ export async function PUT(
             return NextResponse.json({ message: 'Некоректний ID' }, { status: 400 });
         }
 
-        const { number } = await request.json();
+        const body = await request.json();
+        const { number, status } = body;
+
+        // Якщо передано тільки status (без number), оновлюємо тільки статус
+        if (status !== undefined && (!number || number === '')) {
+            // Перевірка, чи користувач є власником ресторану
+            const restaurant = await prisma.restaurant.findUnique({
+                where: { id: numericRestaurantId },
+                select: { ownerId: true }
+            });
+
+            if (!restaurant) {
+                return NextResponse.json({ message: 'Ресторан не знайдено' }, { status: 404 });
+            }
+
+            if (restaurant.ownerId !== Number(session.user.id)) {
+                return NextResponse.json({ message: 'Доступ заборонено' }, { status: 403 });
+            }
+
+            // Перевірка, чи столик належить ресторану
+            // @ts-ignore
+            const table = await prisma.table.findUnique({
+                where: { id: numericTableId },
+                select: { restaurantId: true }
+            });
+
+            if (!table) {
+                return NextResponse.json({ message: 'Столик не знайдено' }, { status: 404 });
+            }
+
+            if (table.restaurantId !== numericRestaurantId) {
+                return NextResponse.json({ message: 'Столик не належить цьому ресторану' }, { status: 403 });
+            }
+
+            // Оновлюємо тільки статус
+            // @ts-ignore
+            const updatedTable = await prisma.table.update({
+                where: { id: numericTableId },
+                data: { status }
+            });
+            return NextResponse.json(updatedTable);
+        }
 
         if (!number || typeof number !== 'string' || number.trim() === '') {
             return NextResponse.json({ message: 'Номер столика обов\'язковий' }, { status: 400 });
@@ -109,7 +152,7 @@ export async function PUT(
         // @ts-ignore - Table модель додано в схему Prisma, TypeScript може не бачити оновлений тип
         const table = await prisma.table.findUnique({
             where: { id: numericTableId },
-            select: { restaurantId: true }
+            select: { restaurantId: true, number: true }
         });
 
         if (!table) {
@@ -118,6 +161,22 @@ export async function PUT(
 
         if (table.restaurantId !== numericRestaurantId) {
             return NextResponse.json({ message: 'Столик не належить цьому ресторану' }, { status: 403 });
+        }
+
+        // Перевірка, чи столик з таким номером вже існує (якщо номер змінюється)
+        if (table.number !== number.trim()) {
+            // @ts-ignore
+            const existingTable = await prisma.table.findFirst({
+                where: {
+                    restaurantId: numericRestaurantId,
+                    number: number.trim(),
+                    id: { not: numericTableId } // Виключаємо поточний столик
+                }
+            });
+
+            if (existingTable) {
+                return NextResponse.json({ message: 'Столик з таким номером вже існує' }, { status: 409 });
+            }
         }
 
         // Генерація нового QR коду
@@ -130,7 +189,8 @@ export async function PUT(
             where: { id: numericTableId },
             data: {
                 number: number.trim(),
-                qrCodeUrl: qrCodeDataUrl
+                qrCodeUrl: qrCodeDataUrl,
+                status: status || undefined
             }
         });
 

@@ -70,7 +70,7 @@ export async function POST(
             return NextResponse.json({ message: 'Некоректний ID ресторану' }, { status: 400 });
         }
 
-        const { number } = await request.json();
+        const { number, status } = await request.json();
 
         if (!number || typeof number !== 'string' || number.trim() === '') {
             return NextResponse.json({ message: 'Номер столика обов\'язковий' }, { status: 400 });
@@ -88,6 +88,19 @@ export async function POST(
 
         if (restaurant.ownerId !== Number(session.user.id)) {
             return NextResponse.json({ message: 'Доступ заборонено' }, { status: 403 });
+        }
+
+        // Перевірка, чи столик з таким номером вже існує
+        // @ts-ignore - Table модель додано в схему Prisma, TypeScript може не бачити оновлений тип
+        const existingTable = await prisma.table.findFirst({
+            where: {
+                restaurantId: numericRestaurantId,
+                number: number.trim()
+            }
+        });
+
+        if (existingTable) {
+            return NextResponse.json({ message: 'Столик з таким номером вже існує' }, { status: 409 });
         }
 
         // Генерація URL для QR коду
@@ -109,7 +122,8 @@ export async function POST(
             data: {
                 number: number.trim(),
                 restaurantId: numericRestaurantId,
-                qrCodeUrl: qrCodeDataUrl
+                qrCodeUrl: qrCodeDataUrl,
+                status: status || 'FREE'
             }
         });
 
