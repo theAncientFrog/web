@@ -7,3 +7,4 @@ ALTER TABLE "Reservation" ADD CONSTRAINT "Reservation_userId_fkey" FOREIGN KEY (
 -- CreateIndex
 CREATE INDEX "Reservation_userId_idx" ON "Reservation"("userId");
 
+

@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { X, Calendar, Clock, User, Phone, FileText } from 'lucide-react';
+import TimePickerModal from './TimePickerModal';
 
 export default function TableReservationModal({ isOpen, onClose, restaurantId }) {
-    const [freeTables, setFreeTables] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedTableId, setSelectedTableId] = useState('');
+    const [isCheckingTables, setIsCheckingTables] = useState(false);
+    const [hasFreeTables, setHasFreeTables] = useState(true);
     const [reservedAt, setReservedAt] = useState('');
     const [reservedTime, setReservedTime] = useState('');
     const [customerName, setCustomerName] = useState('');
@@ -14,27 +15,59 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
     const [notes, setNotes] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [assignedTableNumber, setAssignedTableNumber] = useState(null);
+    const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
 
+    // Скидаємо стан при відкритті модального вікна
     useEffect(() => {
-        if (isOpen && restaurantId) {
-            fetchFreeTables();
+        if (isOpen) {
+            setHasFreeTables(true);
+            setError('');
+            setSuccess(false);
+            setAssignedTableNumber(null);
         }
-    }, [isOpen, restaurantId]);
+    }, [isOpen]);
 
-    const fetchFreeTables = async () => {
-        setIsLoading(true);
+    // Перевірка вільних столиків при зміні дати
+    useEffect(() => {
+        if (reservedAt && restaurantId) {
+            checkFreeTablesForDate();
+        }
+    }, [reservedAt, restaurantId]);
+
+    const checkFreeTables = async () => {
+        // Не перевіряємо при відкритті, тільки при виборі дати
+        setHasFreeTables(true);
+    };
+
+    const checkFreeTablesForDate = async () => {
+        if (!reservedAt) {
+            setHasFreeTables(true);
+            return;
+        }
+        
+        setIsCheckingTables(true);
         try {
-            const res = await fetch(`/api/reservations/${restaurantId}`);
-            if (!res.ok) {
-                throw new Error('Не вдалося завантажити столики');
+            // Перевіряємо вільні години для дати
+            const res = await fetch(`/api/reservations/${restaurantId}/available-times?date=${reservedAt}`);
+            if (res.ok) {
+                const data = await res.json();
+                const hasAvailable = data.availableTimes && data.availableTimes.length > 0;
+                setHasFreeTables(hasAvailable);
+                // Якщо немає вільних годин, очищаємо вибраний час
+                if (!hasAvailable && reservedTime) {
+                    setReservedTime('');
+                }
+            } else {
+                // Якщо помилка API, дозволяємо спробувати
+                setHasFreeTables(true);
             }
-            const data = await res.json();
-            setFreeTables(data);
         } catch (error) {
-            console.error('Error fetching free tables:', error);
-            setError('Помилка завантаження столиків');
+            console.error('Error checking free tables for date:', error);
+            // На випадок помилки дозволяємо спробувати
+            setHasFreeTables(true);
         } finally {
-            setIsLoading(false);
+            setIsCheckingTables(false);
         }
     };
 
@@ -42,11 +75,6 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
         e.preventDefault();
         setError('');
         setSuccess(false);
-
-        if (!selectedTableId) {
-            setError('Оберіть столик');
-            return;
-        }
 
         if (!reservedAt || !reservedTime) {
             setError('Введіть дату та час бронювання');
@@ -59,12 +87,18 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
             return;
         }
 
+        // Перевірка наявності вільних столиків перед відправкою
+        if (!hasFreeTables) {
+            setError('На жаль, вільних столиків немає. Спробуйте іншу дату або час.');
+            return;
+        }
+
+        setIsLoading(true);
         try {
             const res = await fetch(`/api/reservations/${restaurantId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    tableId: selectedTableId,
                     reservedAt: reservedDateTime.toISOString(),
                     customerName: customerName || null,
                     customerPhone: customerPhone || null,
@@ -77,19 +111,24 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
                 throw new Error(data.message || 'Не вдалося створити бронювання');
             }
 
+            const reservation = await res.json();
+            setAssignedTableNumber(reservation.assignedTable || reservation.table?.number || null);
             setSuccess(true);
+            setError(''); // Очищаємо помилки
             setTimeout(() => {
                 onClose();
-                setSelectedTableId('');
                 setReservedAt('');
                 setReservedTime('');
                 setCustomerName('');
                 setCustomerPhone('');
                 setNotes('');
                 setSuccess(false);
-            }, 2000);
+                setAssignedTableNumber(null);
+            }, 3000);
         } catch (error) {
             setError(error.message || 'Помилка створення бронювання');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -115,7 +154,13 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
 
                 {success && (
                     <div className="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-lg text-green-700 dark:text-green-300">
-                        Бронювання успішно створено!
+                        <p className="font-semibold">Бронювання успішно створено!</p>
+                        {assignedTableNumber && (
+                            <p className="text-sm mt-1">Вам призначено столик: <span className="font-semibold">{assignedTableNumber}</span></p>
+                        )}
+                        {!assignedTableNumber && (
+                            <p className="text-sm mt-1">Столик буде призначено автоматично при підтвердженні.</p>
+                        )}
                     </div>
                 )}
 
@@ -125,34 +170,13 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Вибір столика */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            <Calendar size={18} className="inline mr-2" />
-                            Оберіть столик
-                        </label>
-                        {isLoading ? (
-                            <p className="text-sm text-gray-500">Завантаження столиків...</p>
-                        ) : freeTables.length === 0 ? (
-                            <p className="text-sm text-gray-500">Вільних столиків немає</p>
-                        ) : (
-                            <select
-                                value={selectedTableId}
-                                onChange={(e) => setSelectedTableId(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                required
-                            >
-                                <option value="">-- Оберіть столик --</option>
-                                {freeTables.map((table) => (
-                                    <option key={table.id} value={table.id}>
-                                        Столик {table.number}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
+                {!hasFreeTables && !isCheckingTables && reservedAt && (
+                    <div className="mb-4 p-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded-lg text-yellow-700 dark:text-yellow-300">
+                        <p className="text-sm">На жаль, вільних столиків немає на обрану дату. Будь ласка, оберіть іншу дату або час.</p>
                     </div>
+                )}
 
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Дата бронювання */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -175,13 +199,22 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
                             <Clock size={18} className="inline mr-2" />
                             Час бронювання
                         </label>
-                        <input
-                            type="time"
-                            value={reservedTime}
-                            onChange={(e) => setReservedTime(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                            required
-                        />
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!reservedAt) {
+                                    setError('Спочатку оберіть дату');
+                                    return;
+                                }
+                                setIsTimePickerOpen(true);
+                            }}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-left flex items-center justify-between"
+                        >
+                            <span className={reservedTime ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+                                {reservedTime || 'Оберіть час'}
+                            </span>
+                            <Clock size={18} className="text-gray-400" />
+                        </button>
                     </div>
 
                     {/* Ім'я клієнта */}
@@ -239,16 +272,31 @@ export default function TableReservationModal({ isOpen, onClose, restaurantId })
                         </button>
                         <button
                             type="submit"
-                            disabled={isLoading || freeTables.length === 0}
+                            disabled={isLoading || !hasFreeTables || isCheckingTables}
                             className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
-                            Забронювати
+                            {isCheckingTables ? 'Перевірка...' : 'Забронювати'}
                         </button>
                     </div>
                 </form>
+
+                {/* Модальне вікно вибору часу */}
+                <TimePickerModal
+                    isOpen={isTimePickerOpen}
+                    onClose={() => setIsTimePickerOpen(false)}
+                    onSelect={(time) => {
+                        setReservedTime(time);
+                        setError('');
+                    }}
+                    restaurantId={restaurantId}
+                    tableId={null}
+                    selectedDate={reservedAt}
+                    selectedTime={reservedTime}
+                />
             </div>
         </div>
     );
 }
+
 
 

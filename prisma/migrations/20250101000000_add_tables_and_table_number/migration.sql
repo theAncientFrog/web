@@ -25,3 +25,4 @@ ALTER TABLE "Table" ADD CONSTRAINT IF NOT EXISTS "Table_restaurantId_fkey" FOREI
 
 
 
+

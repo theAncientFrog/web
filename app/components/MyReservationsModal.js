@@ -110,10 +110,10 @@ export default function MyReservationsModal({ isOpen, onClose }) {
                                         <div className="flex-1">
                                             {/* Ресторан */}
                                             <div className="flex items-center gap-3 mb-3">
-                                                {reservation.restaurant?.logo && (
+                                                {reservation.restaurant?.logoUrl && (
                                                     <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
                                                         <Image
-                                                            src={reservation.restaurant.logo}
+                                                            src={reservation.restaurant.logoUrl}
                                                             alt={reservation.restaurant.name || 'Ресторан'}
                                                             width={48}
                                                             height={48}
@@ -206,4 +206,5 @@ export default function MyReservationsModal({ isOpen, onClose }) {
         </div>
     );
 }
+
 

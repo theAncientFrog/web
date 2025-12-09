@@ -12,6 +12,9 @@ import Image from 'next/image';
 import { Settings, ArrowLeft, Utensils, Coffee, Wine, Package, User } from 'lucide-react';
 import ProfileModal from '../../components/ProfileModal';
 import MenuSettingsModal from '../../components/MenuSettingsModal';
+import TableReservationModal from '../../components/TableReservationModal';
+import TableNumberInputModal from '../../components/TableNumberInputModal';
+import MyReservationsModal from '../../components/MyReservationsModal';
 import Footer from '../../components/Footer';
 
 // Мапування іконок для категорій
@@ -38,6 +41,9 @@ const getIconForCategory = (categoryName) => {
 export default function MenuPage() {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+    const [isTableNumberModalOpen, setIsTableNumberModalOpen] = useState(false);
+    const [isMyReservationsModalOpen, setIsMyReservationsModalOpen] = useState(false);
     const [restaurant, setRestaurant] = useState(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
     const [categories, setCategories] = useState([]);
@@ -153,6 +159,20 @@ export default function MenuPage() {
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
             />
+            <TableReservationModal 
+                isOpen={isReservationModalOpen} 
+                onClose={() => setIsReservationModalOpen(false)} 
+                restaurantId={restaurantId}
+            />
+            <TableNumberInputModal 
+                isOpen={isTableNumberModalOpen} 
+                onClose={() => setIsTableNumberModalOpen(false)} 
+                restaurantId={restaurantId}
+            />
+            <MyReservationsModal 
+                isOpen={isMyReservationsModalOpen} 
+                onClose={() => setIsMyReservationsModalOpen(false)} 
+            />
 
             <main className="w-full min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 justify-start">
 
@@ -216,18 +236,44 @@ export default function MenuPage() {
                                 <span className="text-sm text-gray-500 dark:text-gray-400 truncate block">{address || 'Адреса відсутня'}</span>
                             </div>
                             {/* 💡 --- 3. ОНОВЛЕНО РІВЕНЬ --- */}
-                            <span className="text-sm font-bold text-green-600 dark:text-green-400 self-start whitespace-nowrap">
-                                lvl. {loyalty.level}
-                            </span>
+                            {status === 'authenticated' && (
+                                <div className="flex flex-col items-end gap-1">
+                                    <span className="text-sm font-bold text-green-600 dark:text-green-400 whitespace-nowrap">
+                                        lvl. {loyalty.level}
+                                    </span>
+                                    {/* Маленькі кнопки справа під рівнем */}
+                                    <div className="flex flex-col gap-1">
+                                        <button
+                                            onClick={() => setIsReservationModalOpen(true)}
+                                            className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition whitespace-nowrap"
+                                        >
+                                            Бронювання столиків
+                                        </button>
+                                        <button
+                                            onClick={() => setIsMyReservationsModalOpen(true)}
+                                            className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/50 transition whitespace-nowrap"
+                                        >
+                                            Мої бронювання
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            {status !== 'authenticated' && (
+                                <span className="text-sm font-bold text-green-600 dark:text-green-400 self-start whitespace-nowrap">
+                                    lvl. {loyalty.level}
+                                </span>
+                            )}
                         </div>
 
                         {/* Прогрес бар */}
-                        <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
-                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                                {/* 💡 --- 4. ОНОВЛЕНО ПРОГРЕС-БАР --- */}
-                                <div className="bg-green-500 dark:bg-green-600 h-2.5 rounded-full" style={{ width: `${loyalty.progress}%` }}></div>
+                        {status === 'authenticated' && (
+                            <div className="mt-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                                    {/* 💡 --- 4. ОНОВЛЕНО ПРОГРЕС-БАР --- */}
+                                    <div className="bg-green-500 dark:bg-green-600 h-2.5 rounded-full" style={{ width: `${loyalty.progress}%` }}></div>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

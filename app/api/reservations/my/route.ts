@@ -23,7 +23,7 @@ export async function GET() {
                     select: { number: true, status: true }
                 },
                 restaurant: {
-                    select: { id: true, name: true, logo: true }
+                    select: { id: true, name: true, logoUrl: true }
                 }
             },
             orderBy: { reservedAt: 'asc' }
@@ -35,4 +35,5 @@ export async function GET() {
         return NextResponse.json({ message: 'Внутрішня помилка сервера' }, { status: 500 });
     }
 }
+
 

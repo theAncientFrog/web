@@ -71,29 +71,32 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 throw new Error(data.message || 'Failed to place order');
             }
 
-            // Успіх! Показуємо красиве модальне вікно
-            setNotification({
-                isOpen: true,
-                type: 'success',
-                title: 'Замовлення успішно оформлено!',
-                message: 'Ваше замовлення прийнято в обробку. Очікуйте підтвердження від кухні.',
-                orderId: data.order?.id || null,
-                orderDetails: {
-                    items: cartItems.map(item => ({
-                        name: item.name,
-                        quantity: item.quantity,
-                        price: item.price,
-                    })),
-                    totalPrice: cartTotal,
-                    tableNumber: tableNumber,
-                },
-            });
+            // Зберігаємо деталі замовлення перед очищенням кошика
+            const orderDetails = {
+                items: cartItems.map(item => ({
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                })),
+                totalPrice: cartTotal,
+                tableNumber: tableNumber,
+            };
             
+            // Очищаємо кошик та закриваємо модалку одразу
             clearCart();
-            // Закриваємо модалку кошика
+            onClose();
+            
+            // Показуємо повідомлення про успіх після закриття кошика
             setTimeout(() => {
-                onClose();
-            }, 300);
+                setNotification({
+                    isOpen: true,
+                    type: 'success',
+                    title: 'Замовлення успішно оформлено!',
+                    message: 'Ваше замовлення прийнято в обробку. Очікуйте підтвердження від кухні.',
+                    orderId: data.order?.id || null,
+                    orderDetails: orderDetails,
+                });
+            }, 100);
 
         } catch (err) {
             console.error('Order error:', err);

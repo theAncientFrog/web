@@ -82,55 +82,103 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { tableId, reservedAt, customerName, customerPhone, notes } = body;
+        const { reservedAt, customerName, customerPhone, notes } = body;
 
-        if (!tableId || !reservedAt) {
-            return NextResponse.json({ message: 'ID столика та час бронювання обов\'язкові' }, { status: 400 });
+        if (!reservedAt) {
+            return NextResponse.json({ message: 'Час бронювання обов\'язковий' }, { status: 400 });
         }
 
-        // Перевірка, чи столик існує та належить ресторану
+        const reservedDateTime = new Date(reservedAt);
+        const startOfDay = new Date(reservedDateTime);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(reservedDateTime);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Знаходимо вільний столик для обраної дати та часу
         // @ts-ignore
-        const table = await prisma.table.findUnique({
-            where: { id: parseInt(tableId) },
-            select: { restaurantId: true, status: true }
+        const allTables = await prisma.table.findMany({
+            where: {
+                restaurantId: numericRestaurantId,
+                status: 'FREE'
+            }
         });
 
-        if (!table) {
-            return NextResponse.json({ message: 'Столик не знайдено' }, { status: 404 });
+        if (allTables.length === 0) {
+            return NextResponse.json({ message: 'Вільних столиків немає' }, { status: 409 });
         }
 
-        if (table.restaurantId !== numericRestaurantId) {
-            return NextResponse.json({ message: 'Столик не належить цьому ресторану' }, { status: 403 });
+        // Перевіряємо, які столики вже заброньовані на цей час
+        // @ts-ignore
+        const existingReservations = await prisma.reservation.findMany({
+            where: {
+                restaurantId: numericRestaurantId,
+                reservedAt: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                }
+            },
+            select: {
+                tableId: true,
+                reservedAt: true
+            }
+        });
+
+        // Знаходимо столики, які вільні на обраний час
+        // Бронювання триває 1.5 години, тому перевіряємо перекриття в межах 1.5 години до і після
+        const reservationDuration = 1.5 * 60 * 60 * 1000; // 1.5 години в мілісекундах
+        const reservedTableIds = new Set(
+            existingReservations
+                .filter(res => {
+                    const resTime = new Date(res.reservedAt);
+                    const timeDiff = Math.abs(resTime.getTime() - reservedDateTime.getTime());
+                    // Перевіряємо, чи бронювання перекривається (в межах 1.5 години до або після)
+                    return timeDiff < reservationDuration;
+                })
+                .map(res => res.tableId)
+        );
+
+        const availableTables = allTables.filter(table => !reservedTableIds.has(table.id));
+
+        if (availableTables.length === 0) {
+            return NextResponse.json({ message: 'На обраний час немає вільних столиків' }, { status: 409 });
         }
 
-        // Перевірка, чи столик вільний
-        if (table.status !== 'FREE') {
-            return NextResponse.json({ message: 'Столик зайнятий або вже заброньований' }, { status: 409 });
-        }
+        // Вибираємо випадковий вільний столик
+        const selectedTable = availableTables[Math.floor(Math.random() * availableTables.length)];
 
         // Створення бронювання
         const userId = Number(session.user.id);
         // @ts-ignore
         const reservation = await prisma.reservation.create({
             data: {
-                tableId: parseInt(tableId),
+                tableId: selectedTable.id,
                 restaurantId: numericRestaurantId,
                 userId: userId,
-                reservedAt: new Date(reservedAt),
+                reservedAt: reservedDateTime,
                 customerName: customerName || null,
                 customerPhone: customerPhone || null,
                 notes: notes || null
+            },
+            include: {
+                table: {
+                    select: { number: true }
+                }
             }
         });
+
+        const assignedTableNumber = reservation.table?.number || selectedTable.number;
 
         // Оновлюємо статус столика на RESERVED
         // @ts-ignore
         await prisma.table.update({
-            where: { id: parseInt(tableId) },
+            where: { id: selectedTable.id },
             data: { status: 'RESERVED' }
         });
 
-        return NextResponse.json(reservation, { status: 201 });
+        return NextResponse.json({
+            ...reservation,
+            assignedTable: assignedTableNumber
+        }, { status: 201 });
     } catch (error: any) {
         console.error('Помилка при створенні бронювання:', error);
         

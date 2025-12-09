@@ -23,9 +23,7 @@ import ProfileModal from '../../components/ProfileModal';
 import CartModal from '../../components/CartModal';
 import MyOrdersModal from '../../components/MyOrdersModal';
 import MenuSettingsModal from '../../components/MenuSettingsModal';
-import TableReservationModal from '../../components/TableReservationModal';
 import TableNumberInputModal from '../../components/TableNumberInputModal';
-import MyReservationsModal from '../../components/MyReservationsModal';
 import Footer from '../../components/Footer';
 import MenuItem from '../../components/MenuItem';
 
@@ -45,9 +43,7 @@ function MenuSecondaryContent() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isOrdersOpen, setIsOrdersOpen] = useState(false);
     const [isMenuSettingsOpen, setIsMenuSettingsOpen] = useState(false);
-    const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
     const [isTableNumberModalOpen, setIsTableNumberModalOpen] = useState(false);
-    const [isMyReservationsModalOpen, setIsMyReservationsModalOpen] = useState(false);
     const [loyalty, setLoyalty] = useState({ level: 1, progress: 0 });
     const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(true);
     const [categoryLevels, setCategoryLevels] = useState({}); // { categoryId: { level, progress } }
@@ -391,21 +387,10 @@ function MenuSecondaryContent() {
             />
             <MyOrdersModal isOpen={isOrdersOpen} onClose={() => setIsOrdersOpen(false)} restaurantId={restaurantId} />
             
-            <TableReservationModal 
-                isOpen={isReservationModalOpen} 
-                onClose={() => setIsReservationModalOpen(false)} 
-                restaurantId={restaurantId}
-            />
-            
             <TableNumberInputModal 
                 isOpen={isTableNumberModalOpen} 
                 onClose={() => setIsTableNumberModalOpen(false)} 
                 restaurantId={restaurantId}
-            />
-            
-            <MyReservationsModal 
-                isOpen={isMyReservationsModalOpen} 
-                onClose={() => setIsMyReservationsModalOpen(false)} 
             />
 
             <div className="min-h-screen bg-white dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100">
@@ -461,7 +446,7 @@ function MenuSecondaryContent() {
                                                         ></div>
                                                     </div>
                                                 </div>
-                                                {/* Кнопки для роботи зі столиками - під рівнем */}
+                                                {/* Маленькі кнопки справа під рівнем */}
                                                 <div className="flex flex-col gap-1">
                                                     {!tableNumber && (
                                                         <button
@@ -477,18 +462,6 @@ function MenuSecondaryContent() {
                                                             Столик {tableNumber}
                                                         </div>
                                                     )}
-                                                    <button
-                                                        onClick={() => setIsReservationModalOpen(true)}
-                                                        className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition whitespace-nowrap"
-                                                    >
-                                                        Бронювання столиків
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setIsMyReservationsModalOpen(true)}
-                                                        className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/50 transition whitespace-nowrap"
-                                                    >
-                                                        Мої бронювання
-                                                    </button>
                                                 </div>
                                             </div>
                                         )}
