@@ -77,6 +77,7 @@ export async function PUT(request, { params }) {
                 description: data.description,
                 price: price,
                 calories: calories,
+                allergens: data.allergens,
                 imageUrl: data.imageUrl,
             },
         });

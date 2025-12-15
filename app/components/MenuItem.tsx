@@ -14,6 +14,9 @@ interface MenuItemProps {
         name: string;
         nameEn?: string | null;
         price: number;
+        originalPrice?: number;
+        discountPercent?: number;
+        discountSource?: 'restaurant' | 'category';
         imageUrl?: string | null;
         description?: string | null;
         descriptionEn?: string | null;
@@ -21,22 +24,27 @@ interface MenuItemProps {
         allergens?: string | null;
     };
     restaurantId: string;
-    discount?: number; // Знижка в відсотках
 }
 
-const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
+const MenuItem = ({ dish, restaurantId }: MenuItemProps) => {
     const { t, i18n } = useTranslation();
     const { addToCart } = useCart();
     const [isAdding, setIsAdding] = useState(false);
     const [showCalories, setShowCalories] = useState(true);
     const [showAllergens, setShowAllergens] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    
+
     // API вже повертає локалізовані дані (без nameEn, descriptionEn, allergensEn)
     // Тому просто використовуємо name, description, allergens, які вже містять правильну мову
     const dishName = dish.name || '';
     const dishDescription = dish.description || null;
     const dishAllergens = dish.allergens || '';
+    const price = dish.price;
+    const originalPrice = dish.originalPrice || dish.price;
+    const discountPercent = dish.discountPercent || 0;
+    const hasDiscount = discountPercent > 0 && price < originalPrice; // Знижка є тільки якщо ціни відрізняються
+    const discountSource = dish.discountSource || 'restaurant';
+
 
     // Завантажуємо налаштування з localStorage та слухаємо зміни
     useEffect(() => {
@@ -72,10 +80,6 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
         };
     }, []);
 
-    // Розраховуємо ціну зі знижкою
-    const originalPrice = dish.price;
-    const discountedPrice = discount > 0 ? originalPrice * (1 - discount / 100) : originalPrice;
-    
     // Перевіряємо, чи є калорійність та алергени
     const hasCalories = dish.calories !== null && dish.calories !== undefined && dish.calories > 0;
     const hasAllergens = dish.allergens && dish.allergens.trim().length > 0;
@@ -88,7 +92,7 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
             {
                 id: dish.id,
                 name: dishName, // Локалізована назва (вже від API)
-                price: originalPrice, // Зберігаємо оригінальну ціну
+                price: price,
                 imageUrl: dish.imageUrl || '/images/placeholder.jpg',
             },
             restaurantId
@@ -103,13 +107,18 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
                 onClose={() => setIsModalOpen(false)}
                 dish={dish}
                 restaurantId={restaurantId}
-                discount={discount}
             />
-            <div 
-                className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg dark:hover:shadow-xl transition-shadow duration-200 overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col cursor-pointer"
+            <div
+                className="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg dark:hover:shadow-xl transition-shadow duration-200 overflow-hidden border border-gray-100 dark:border-gray-700 flex flex-col cursor-pointer relative"
                 onClick={() => setIsModalOpen(true)}
             >
-            {/* Зображення страви */}
+                {/* Бейдж знижки закладу */}
+                {hasDiscount && discountSource === 'restaurant' && (
+                    <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium z-10">
+                        Знижка закладу -{discountPercent.toFixed(1)}%
+                    </div>
+                )}
+                {/* Зображення страви */}
             <div className="relative w-full h-48 bg-gray-200 dark:bg-gray-700">
                 <Image
                     src={dish.imageUrl || '/images/placeholder.jpg'}
@@ -165,18 +174,21 @@ const MenuItem = ({ dish, restaurantId, discount = 0 }: MenuItemProps) => {
                 {/* Ціна та кнопка */}
                 <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
                     <div className="flex flex-col">
-                        {discount > 0 ? (
+                        {hasDiscount ? (
                             <>
-                                <span className="text-lg font-bold text-gray-900 dark:text-white">
-                                    {discountedPrice.toFixed(2)} {t('menu.currency')}
+                                <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                                    {price.toFixed(2)} {t('menu.currency')}
                                 </span>
                                 <span className="text-xs text-gray-500 dark:text-gray-400 line-through">
                                     {originalPrice.toFixed(2)} {t('menu.currency')}
                                 </span>
+                                <span className="text-xs text-green-600 dark:text-green-400">
+                                    -{discountPercent.toFixed(1)}% {discountSource === 'restaurant' ? 'від закладу' : 'від категорії'}
+                                </span>
                             </>
                         ) : (
                             <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                {originalPrice.toFixed(2)} {t('menu.currency')}
+                                {price.toFixed(2)} {t('menu.currency')}
                             </span>
                         )}
                     </div>

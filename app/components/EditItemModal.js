@@ -8,6 +8,7 @@ export default function EditItemModal({ isOpen, onClose, onItemUpdated, itemToEd
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
     const [calories, setCalories] = useState('');
+    const [allergens, setAllergens] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +20,7 @@ export default function EditItemModal({ isOpen, onClose, onItemUpdated, itemToEd
             setDescription(itemToEdit.description || '');
             setPrice(itemToEdit.price?.toString() || '');
             setCalories(itemToEdit.calories?.toString() || '');
+            setAllergens(itemToEdit.allergens || '');
             setImageUrl(itemToEdit.imageUrl || '');
         }
     }, [itemToEdit]);
@@ -53,6 +55,7 @@ export default function EditItemModal({ isOpen, onClose, onItemUpdated, itemToEd
                     description,
                     price: parsedPrice,
                     calories: parsedCalories,
+                    allergens: allergens.trim() || null,
                     imageUrl
                 }),
             });
@@ -111,6 +114,12 @@ export default function EditItemModal({ isOpen, onClose, onItemUpdated, itemToEd
                                 <label htmlFor="editItemCal" className="block font-medium mb-2 text-sm text-gray-700">Calories (optional)</label>
                                 <input id="editItemCal" type="number" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., 350" value={calories} onChange={(e) => setCalories(e.target.value)} />
                             </div>
+                        </div>
+
+                        <div className="mb-5 text-left">
+                            <label htmlFor="editItemAllergens" className="block font-medium mb-2 text-sm text-gray-700">Allergens (optional)</label>
+                            <input id="editItemAllergens" type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Горіхи, Молочні продукти, Глютен" value={allergens} onChange={(e) => setAllergens(e.target.value)} />
+                            <p className="text-xs text-gray-500 mt-1">Введіть алергени через кому</p>
                         </div>
 
                         <div className="mb-5 text-left">

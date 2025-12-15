@@ -180,11 +180,14 @@ export default function ManageItemsPage() {
                                         <div className="flex-grow text-left overflow-hidden">
                                             <h3 className="m-0 mb-0.5 text-base sm:text-lg font-semibold truncate">{item.name}</h3>
                                             <p className="m-0 mb-1 text-gray-500 text-sm truncate">{item.description || 'No description'}</p>
-                                            <div className="flex items-center gap-1 text-sm">
+                                            <div className="flex flex-col gap-1 text-sm">
                                                 {/* manageItemPrice */}
                                                 <span className="font-semibold text-gray-800">{item.price.toFixed(2)} грн</span>
-                                                {/* manageItemCalories */}
-                                                {item.calories != null && <span className="text-xs text-gray-400"> / {item.calories} cal</span>}
+                                                {/* manageItemCalories and Allergens */}
+                                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                                    {item.calories != null && <span>{item.calories} cal</span>}
+                                                    {item.allergens && <span>• {item.allergens}</span>}
+                                                </div>
                                             </div>
                                         </div>
                                         {/* manageItemActions */}

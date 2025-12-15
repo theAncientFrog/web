@@ -8,12 +8,13 @@ export default function AddItemModal({ isOpen, onClose, onItemAdded, restaurantI
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
     const [calories, setCalories] = useState('');
+    const [allergens, setAllergens] = useState('');
     const [imageUrl, setImageUrl] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleClose = () => {
-        setName(''); setDescription(''); setPrice(''); setCalories(''); setImageUrl('');
+        setName(''); setDescription(''); setPrice(''); setCalories(''); setAllergens(''); setImageUrl('');
         setError('');
         setIsLoading(false);
         onClose();
@@ -44,6 +45,7 @@ export default function AddItemModal({ isOpen, onClose, onItemAdded, restaurantI
                     description,
                     price: parsedPrice,
                     calories: parsedCalories,
+                    allergens: allergens.trim() || null,
                     imageUrl
                 }),
             });
@@ -102,6 +104,12 @@ export default function AddItemModal({ isOpen, onClose, onItemAdded, restaurantI
                                 <label htmlFor="itemCal" className="block font-medium mb-2 text-sm text-gray-700">Calories (optional)</label>
                                 <input id="itemCal" type="number" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., 350" value={calories} onChange={(e) => setCalories(e.target.value)} />
                             </div>
+                        </div>
+
+                        <div className="mb-5 text-left">
+                            <label htmlFor="itemAllergens" className="block font-medium mb-2 text-sm text-gray-700">Allergens (optional)</label>
+                            <input id="itemAllergens" type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Горіхи, Молочні продукти, Глютен" value={allergens} onChange={(e) => setAllergens(e.target.value)} />
+                            <p className="text-xs text-gray-500 mt-1">Введіть алергени через кому</p>
                         </div>
 
                         <div className="mb-5 text-left">

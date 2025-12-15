@@ -37,6 +37,7 @@ model User {
   restaurants Restaurant[]
   orders      Order[]
   userRestaurantStats UserRestaurantStats[]
+  userSubcategoryStats UserSubcategoryStats[]
   comments    Comment[]
   reservations Reservation[]
   userAchievements UserAchievement[]
@@ -91,6 +92,23 @@ model UserRestaurantStats {
   @@unique([userId, restaurantId])
 }
 
+model UserSubcategoryStats {
+  id           Int @id @default(autoincrement())
+  userId       Int
+  subcategoryId Int // ID підкатегорії
+  restaurantId Int // ID ресторану для швидкого доступу
+  xp           Int @default(0) // Досвід для цієї підкатегорії
+
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subcategory Category   @relation(fields: [subcategoryId], references: [id], onDelete: Restrict)
+  restaurant  Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, subcategoryId])
+  @@index([userId])
+  @@index([subcategoryId])
+  @@index([restaurantId])
+}
+
 enum CategoryType {
   KITCHEN // Кухня
   DRINKS  // Напої (безалкогольні)
@@ -115,6 +133,7 @@ model Restaurant {
   categories  Category[]
   orders      Order[]
   userRestaurantStats UserRestaurantStats[]
+  userSubcategoryStats UserSubcategoryStats[]
   tables      Table[]
   reservations Reservation[]
 }
@@ -128,12 +147,13 @@ model Category {
   // Category hierarchy
   type         CategoryType @default(KITCHEN)
   parentId     Int?  // Parent category ID for subcategories
-  parent       Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  parent       Category? @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   subcategories Category[] @relation("CategoryHierarchy")
 
   restaurantId Int
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   dishes       Dish[]
+  userSubcategoryStats UserSubcategoryStats[]
 }
 
 model Dish {
@@ -148,7 +168,7 @@ model Dish {
   allergensEn String? // Comma-separated список алергенів (англійською)
   imageUrl    String?
   categoryId  Int
-  category    Category @relation(fields: [categoryId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   orderItems  OrderItem[]
   comments    Comment[]
 }
@@ -181,7 +201,7 @@ model OrderItem {
   orderId        Int
   order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   dishId         Int
-  dish           Dish    @relation(fields: [dishId], references: [id])
+  dish           Dish    @relation(fields: [dishId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Achievement {
@@ -210,11 +230,12 @@ model UserAchievement {
 model Comment {
   id        Int      @id @default(autoincrement())
   text      String
+  rating    Int?     // Рейтинг від 1 до 5 зірок
   createdAt DateTime @default(now())
   userId    Int
   dishId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([dishId])
   @@index([userId])

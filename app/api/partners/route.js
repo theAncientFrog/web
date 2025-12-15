@@ -18,9 +18,9 @@ export async function GET(request) {
         } catch (localeError) {
             console.warn('[Partners API] Failed to get locale from request, using default:', localeError);
         }
-        
+
         console.log('[Partners API] Fetching restaurants with locale:', locale);
-        
+
         // Отримуємо лише основні дані, які потрібні для картки-прев'ю
         const restaurants = await prisma.restaurant.findMany({
             select: {
@@ -29,9 +29,9 @@ export async function GET(request) {
                 nameEn: true,
                 description: true,
                 descriptionEn: true,
-                address: true, 
-                logoUrl: true, 
-                bannerUrl: true, 
+                address: true,
+                logoUrl: true,
+                bannerUrl: true,
             },
             orderBy: {
                 name: 'asc',
@@ -39,6 +39,11 @@ export async function GET(request) {
         });
 
         console.log('[Partners API] Found restaurants:', restaurants.length);
+
+        // Перевіряємо, чи є ресторани в базі даних
+        if (!restaurants || restaurants.length === 0) {
+            console.warn('[Partners API] No restaurants found in database');
+        }
 
         // Локалізуємо дані ресторанів (з обробкою помилок)
         let localizedRestaurants;
@@ -58,9 +63,12 @@ export async function GET(request) {
             }));
         }
 
+        // Логуємо фінальний результат
+        console.log('[Partners API] Returning restaurants:', localizedRestaurants.length);
+
         // Встановлюємо заголовок для запобігання кешуванню
         return NextResponse.json(localizedRestaurants, {
-             headers: { 
+             headers: {
                  'Cache-Control': 'no-store, max-age=0',
                  'Content-Language': locale,
                  'Vary': 'Accept-Language, x-lang',

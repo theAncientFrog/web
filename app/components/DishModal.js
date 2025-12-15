@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Plus, Send, User } from 'lucide-react';
+import { X, Plus, Send, User, Star } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
 import { useCart } from '@/context/CartContext';
 
-export default function DishModal({ isOpen, onClose, dish, restaurantId, discount = 0 }) {
+export default function DishModal({ isOpen, onClose, dish, restaurantId }) {
     const { t, i18n } = useTranslation();
     const { data: session, status: sessionStatus } = useSession();
     const { addToCart } = useCart();
@@ -20,8 +20,10 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
     const dishAllergens = dish?.allergens || '';
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
+    const [newRating, setNewRating] = useState(0);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [userAlreadyCommented, setUserAlreadyCommented] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
     const [showCalories, setShowCalories] = useState(true);
     const [showAllergens, setShowAllergens] = useState(true);
@@ -44,13 +46,21 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
 
     const loadComments = async () => {
         if (!dish?.id) return;
-        
+
         setIsLoadingComments(true);
         try {
             const res = await fetch(`/api/comments?dishId=${dish.id}`);
             if (res.ok) {
                 const data = await res.json();
-                setComments(Array.isArray(data) ? data : []);
+                const commentsArray = Array.isArray(data) ? data : [];
+                setComments(commentsArray);
+
+                // Перевіряємо, чи користувач вже залишив коментар
+                if (session?.user?.id) {
+                    const userId = session.user.id;
+                    const hasCommented = commentsArray.some(comment => comment.userId === userId);
+                    setUserAlreadyCommented(hasCommented);
+                }
             }
         } catch (error) {
             console.error('Error loading comments:', error);
@@ -61,11 +71,18 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
 
     const handleSubmitComment = async (e) => {
         e.preventDefault();
-        
+
+        console.log('DishModal: Attempting to submit comment');
+        console.log('DishModal: Session status:', sessionStatus);
+        console.log('DishModal: Session exists:', !!session);
+        console.log('DishModal: Session user exists:', !!session?.user);
+        console.log('DishModal: Session user ID:', session?.user?.id, 'type:', typeof session?.user?.id);
+        console.log('DishModal: Comment text:', newComment.trim());
+
         if (sessionStatus === 'loading') {
             return; // Чекаємо завантаження сесії
         }
-        
+
         if (!session || !session.user || !newComment.trim()) {
             if (!session) {
                 alert('Будь ласка, увійдіть в систему, щоб залишити коментар.');
@@ -83,6 +100,7 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                 body: JSON.stringify({
                     dishId: dish.id,
                     text: newComment.trim(),
+                    rating: newRating > 0 ? newRating : undefined,
                 }),
             });
 
@@ -90,6 +108,7 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
             
             if (res.ok) {
                 setNewComment('');
+                setNewRating(0);
                 loadComments(); // Перезавантажуємо коментарі
             } else {
                 console.error('Error submitting comment:', data);
@@ -105,12 +124,12 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
 
     const handleAddToCart = () => {
         setIsAddingToCart(true);
-        const originalPrice = dish.price;
         addToCart(
             {
                 id: dish.id,
                 name: dishName,
-                price: originalPrice,
+                price: discountedPrice, // Використовуємо ціну зі знижкою
+                originalPrice: originalPrice,
                 imageUrl: dish.imageUrl || '/images/placeholder.jpg',
             },
             restaurantId
@@ -120,8 +139,11 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
 
     if (!isOpen || !dish) return null;
 
-    const originalPrice = dish.price;
-    const discountedPrice = discount > 0 ? originalPrice * (1 - discount / 100) : originalPrice;
+    const originalPrice = dish.originalPrice || dish.price;
+    const discountedPrice = dish.price; // Ціна вже включає знижку
+    const discountPercent = dish.discountPercent || 0;
+    const hasDiscount = discountPercent > 0;
+    const discountSource = dish.discountSource || 'restaurant';
     const hasCalories = dish.calories !== null && dish.calories !== undefined && dish.calories > 0;
     const hasAllergens = dish.allergens && dish.allergens.trim().length > 0;
 
@@ -193,16 +215,16 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
 
                     {/* Ціна */}
                     <div className="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
-                        {discount > 0 ? (
+                        {hasDiscount ? (
                             <div className="flex items-center gap-3">
-                                <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                                <span className="text-3xl font-bold text-green-600 dark:text-green-400">
                                     {discountedPrice.toFixed(2)} {t('menu.currency')}
                                 </span>
                                 <span className="text-lg text-gray-500 dark:text-gray-400 line-through">
                                     {originalPrice.toFixed(2)} {t('menu.currency')}
                                 </span>
-                                <span className="text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
-                                    -{discount}%
+                                <span className="text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded">
+                                    -{discountPercent.toFixed(1)}% {discountSource === 'restaurant' ? 'від закладу' : 'від категорії'}
                                 </span>
                             </div>
                         ) : (
@@ -243,6 +265,21 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                                                     <span className="font-semibold text-gray-900 dark:text-white text-sm">
                                                         {comment.user?.name || 'Анонімний користувач'}
                                                     </span>
+                                                    {comment.rating && (
+                                                        <div className="flex items-center gap-1">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <Star
+                                                                    key={i}
+                                                                    size={12}
+                                                                    className={`${
+                                                                        i < comment.rating
+                                                                            ? 'text-yellow-400 fill-yellow-400'
+                                                                            : 'text-gray-300 dark:text-gray-600'
+                                                                    }`}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <span className="text-xs text-gray-500 dark:text-gray-400">
                                                         {new Date(comment.createdAt).toLocaleDateString('uk-UA', {
                                                             day: 'numeric',
@@ -262,31 +299,85 @@ export default function DishModal({ isOpen, onClose, dish, restaurantId, discoun
                             )}
                         </div>
 
-                        {/* Форма додавання коментаря */}
-                        {session ? (
-                            <form onSubmit={handleSubmitComment} className="mt-4">
-                                <div className="flex gap-2">
-                                    <textarea
-                                        value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
-                                        placeholder="Напишіть коментар..."
-                                        rows={3}
-                                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={!newComment.trim() || isSubmittingComment}
-                                        className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        <Send size={18} />
-                                    </button>
+                        {/* Інформація про авторизацію */}
+                        {sessionStatus === 'loading' ? (
+                            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    Перевірка авторизації...
+                                </p>
+                            </div>
+                        ) : session ? (
+                            userAlreadyCommented ? (
+                                <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                    <p className="text-sm text-green-700 dark:text-green-300">
+                                        Ви вже залишили коментар до цієї страви
+                                    </p>
                                 </div>
-                            </form>
+                            ) : (
+                                <form onSubmit={handleSubmitComment} className="mt-4">
+                                    {/* Рейтинг зірок */}
+                                    <div className="mb-3">
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Оцініть страву (необов'язково)
+                                        </label>
+                                        <div className="flex items-center gap-1">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    type="button"
+                                                    onClick={() => setNewRating(star)}
+                                                    className="p-1 hover:scale-110 transition-transform"
+                                                >
+                                                    <Star
+                                                        size={24}
+                                                        className={`${
+                                                            star <= newRating
+                                                                ? 'text-yellow-400 fill-yellow-400'
+                                                                : 'text-gray-300 dark:text-gray-600 hover:text-yellow-400'
+                                                        }`}
+                                                    />
+                                                </button>
+                                            ))}
+                                            {newRating > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewRating(0)}
+                                                    className="ml-2 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                                                >
+                                                    Очистити
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <textarea
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                            placeholder="Напишіть коментар..."
+                                            rows={3}
+                                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!newComment.trim() || isSubmittingComment || sessionStatus === 'loading'}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </div>
+                                </form>
+                            )
                         ) : (
                             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                                 <p className="text-sm text-blue-700 dark:text-blue-300">
                                     Увійдіть, щоб залишити коментар
                                 </p>
+                                {process.env.NODE_ENV === 'development' && (
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Session status: {sessionStatus} | User: {session ? 'logged in' : 'not logged in'}
+                                    </p>
+                                )}
                             </div>
                         )}
                     </div>

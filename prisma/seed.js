@@ -680,9 +680,9 @@ async function main() {
 
     // --- СТВОРЕННЯ АЧІВКИ ---
     const achievementsData = [
-        { code: 'FOODIE_1', name: 'Смачний початок', description: 'Зробити 1 завершене замовлення', iconUrl: '/icons/foodie_1.png' },
-        { code: 'FOODIE_2', name: 'Постійний гість', description: 'Зробити 5 завершених замовлень', iconUrl: '/icons/foodie_2.png' },
-        { code: 'FOODIE_3', name: 'Легенда закладів', description: 'Зробити 10 завершених замовлень', iconUrl: '/icons/foodie_3.png' },
+        { code: 'FOODIE_1', name: 'Смачний початок', description: 'Зробити перше замовлення', iconUrl: '/icons/foodie_1.png' },
+        { code: 'FOODIE_2', name: 'Постійний гість', description: 'Зробити 5 замовлень', iconUrl: '/icons/foodie_2.png' },
+        { code: 'FOODIE_3', name: 'Легенда закладів', description: 'Зробити 10 замовлень', iconUrl: '/icons/foodie_3.png' },
         { code: 'EXPLORER_1', name: 'На розвідці', description: 'Замовити в 3 різних закладах', iconUrl: '/icons/explorer_1.png' },
         { code: 'EXPLORER_2', name: 'Місцевий експерт', description: 'Замовити в 5 різних закладах', iconUrl: '/icons/explorer_2.png' }
     ];

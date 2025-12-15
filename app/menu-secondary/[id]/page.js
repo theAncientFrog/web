@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from 'react-i18next';
@@ -52,7 +52,6 @@ function MenuSecondaryContent() {
     const [isTableNumberModalOpen, setIsTableNumberModalOpen] = useState(false);
     const [loyalty, setLoyalty] = useState({ level: 1, progress: 0 });
     const [isLoadingLoyalty, setIsLoadingLoyalty] = useState(true);
-    const [categoryLevels, setCategoryLevels] = useState({}); // { categoryId: { level, progress } }
     const [expandedCategories, setExpandedCategories] = useState(new Set());
     const [selectedMainCategory, setSelectedMainCategory] = useState(null); // Для мобільної версії
     const [searchQuery, setSearchQuery] = useState('');
@@ -235,13 +234,33 @@ function MenuSecondaryContent() {
                             // Використовуємо mainCategoryId, який вже є в subCat
                             const mainCategoryId = subCat.mainCategoryId || null;
                             console.log(`[Category Mapping] Підкатегорія ${subCat.name} (ID: ${subCat.id}) → Головна категорія ${subCat.mainCategoryName} (ID: ${mainCategoryId})`);
+
+                            // Застосовуємо знижку закладу до всіх товарів (якщо немає знижки підкатегорії)
+                            const dishesWithDiscount = dishes.map(dish => {
+                                // Якщо у підкатегорії немає спеціальної знижки, застосовуємо знижку закладу
+                                const discountPercent = restaurantDiscount; // Використовуємо знижку закладу як базову
+
+                                const discountedPrice = dish.price * (1 - discountPercent / 100);
+
+
+                                return {
+                                    ...dish,
+                                    price: discountedPrice, // Знижена ціна стає основною ціною
+                                    originalPrice: dish.price, // Оригінальна ціна зберігається окремо
+                                    discountPercent: discountPercent,
+                                    subcategoryLevel: 1, // Базовий рівень для візуалізації
+                                    discountSource: 'restaurant' // Вказуємо, що знижка від закладу
+                                };
+                            });
+
                             // API вже повертає локалізовані дані, тому просто використовуємо name
                             dishesByCategory.push({
                                 categoryName: subCat.name, // Вже локалізована назва
                                 categoryId: subCat.id,
                                 mainCategoryId: mainCategoryId,
                                 mainCategoryName: subCat.mainCategoryName, // Вже локалізована назва
-                                dishes: dishes
+                                dishes: dishesWithDiscount,
+                                restaurantDiscount: restaurantDiscount
                             });
                         }
                     } catch (error) {
@@ -266,7 +285,7 @@ function MenuSecondaryContent() {
                 abortController.abort();
             };
         }
-    }, [restaurantId, categories, isEnglish]);
+    }, [restaurantId, categories, isEnglish, status]);
 
     // Завантаження рівня лояльності закладу
     useEffect(() => {
@@ -292,56 +311,10 @@ function MenuSecondaryContent() {
         }
     }, [restaurantId, status]);
 
-    // Функція для завантаження рівнів категорій
-    const loadCategoryLevels = useCallback(() => {
-        if (restaurantId && status === 'authenticated') {
-            console.log('[Category Levels] Завантаження рівнів категорій для ресторану:', restaurantId);
-            fetch(`/api/loyalty/categories/${restaurantId}`)
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error(`Failed to load category levels: ${res.status}`);
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    console.log('[Category Levels] Отримано дані:', data);
-                    const levelsMap = {};
-                    if (Array.isArray(data)) {
-                        data.forEach(cat => {
-                            levelsMap[cat.categoryId] = {
-                                level: cat.level || 1,
-                                progress: cat.progress || 0,
-                                hasStats: cat.hasStats || false, // Чи є статистика (чи робив покупки)
-                            };
-                            console.log(`[Category Levels] Категорія ${cat.categoryName} (ID: ${cat.categoryId}): level=${cat.level}, progress=${cat.progress}, hasStats=${cat.hasStats}`);
-                        });
-                    }
-                    console.log('[Category Levels] Оновлено levelsMap:', levelsMap);
-                    setCategoryLevels(levelsMap);
-                })
-                .catch(error => {
-                    console.error('[Category Levels] Помилка завантаження:', error);
-                    setCategoryLevels({});
-                });
-        }
-    }, [restaurantId, status]);
+    // Обчислюємо знижку закладу на основі рівня (плавний ріст, максимум 10%)
+    const restaurantDiscount = status === 'authenticated' ? Math.min(loyalty.level * 0.4, 10) : 0; // 0.4% за рівень, максимум 10%
 
-    // Завантаження рівнів категорій при завантаженні сторінки
-    useEffect(() => {
-        loadCategoryLevels();
-    }, [restaurantId, status]);
 
-    // Оновлення рівнів категорій після закриття CartModal (якщо замовлення було створено)
-    useEffect(() => {
-        if (!isCartOpen && status === 'authenticated' && restaurantId) {
-            // Оновлюємо рівні категорій після закриття кошика (якщо замовлення було створено)
-            const timer = setTimeout(() => {
-                console.log('[Category Levels] Оновлення після закриття кошика');
-                loadCategoryLevels();
-            }, 1500); // Збільшена затримка, щоб дати час API оновити дані
-            return () => clearTimeout(timer);
-        }
-    }, [isCartOpen, status, restaurantId, loadCategoryLevels]);
 
     // Скрол до категорії при кліку на сайдбар
     const scrollToCategory = (categoryName) => {
@@ -439,15 +412,11 @@ function MenuSecondaryContent() {
                 isOpen={isMenuSettingsOpen} 
                 onClose={() => setIsMenuSettingsOpen(false)} 
             />
-            <CartModal 
-                isOpen={isCartOpen} 
+            <CartModal
+                isOpen={isCartOpen}
                 onClose={() => {
                     setIsCartOpen(false);
-                    // Оновлюємо рівні категорій після закриття кошика
-                    setTimeout(() => {
-                        loadCategoryLevels();
-                    }, 1000);
-                }} 
+                }}
                 restaurantId={restaurantId}
                 tableNumber={tableNumber || null}
             />
@@ -506,11 +475,16 @@ function MenuSecondaryContent() {
                                                         lvl. {loyalty.level}
                                                     </span>
                                                     <div className="w-16 sm:w-20 h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-0.5 sm:mt-1">
-                                                        <div 
-                                                            className="bg-green-500 dark:bg-green-600 h-full rounded-full" 
+                                                        <div
+                                                            className="bg-green-500 dark:bg-green-600 h-full rounded-full"
                                                             style={{ width: `${loyalty.progress}%` }}
                                                         ></div>
                                                     </div>
+                                                    {restaurantDiscount > 0 && (
+                                                        <span className="text-xs text-blue-600 dark:text-blue-400 block whitespace-nowrap">
+                                                            -{restaurantDiscount.toFixed(1)}% на всі страви
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {/* Маленькі кнопки справа під рівнем */}
                                                 <div className="flex flex-col gap-1">
@@ -973,7 +947,7 @@ function MenuSecondaryContent() {
                                                 ref={(el) => (categoryRefs.current[categoryId] = el)}
                                                 className="scroll-mt-24"
                                             >
-                                                {/* Заголовок категорії з рівнем та шкалою */}
+                                                {/* Заголовок категорії */}
                                                 <div className="mb-4 sm:mb-6 pb-3 sm:pb-4 border-b border-gray-200 dark:border-gray-700">
                                                     <div className="flex items-center justify-between mb-2 gap-2">
                                                         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate flex-1">
@@ -982,71 +956,18 @@ function MenuSecondaryContent() {
                                                                 ({categoryData.dishes.length})
                                                             </span>
                                                         </h2>
-                                                        {status === 'authenticated' && (() => {
-                                                            const catLevel = categoryLevels[categoryData.mainCategoryId];
-                                                            console.log(`[Category Display] Категорія ${categoryData.categoryName} (mainCategoryId: ${categoryData.mainCategoryId}):`, catLevel);
-                                                            // Показуємо рівень завжди, але знижку тільки якщо є статистика
-                                                            if (!catLevel) {
-                                                                // Якщо немає даних, показуємо рівень 1
-                                                                return (
-                                                                    <div className="flex items-center gap-3">
-                                                                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                                                            lvl. 1
-                                                                        </span>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                            // Знижка тільки якщо є статистика (hasStats === true)
-                                                            const discount = catLevel.hasStats ? Math.min(catLevel.level * 2, 20) : 0; // 2% за рівень, максимум 20%
-                                                            return (
-                                                                <div className="flex items-center gap-3">
-                                                                    <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                                                                        lvl. {catLevel.level}
-                                                                    </span>
-                                                                    {discount > 0 && (
-                                                                        <span className="text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
-                                                                            -{discount}%
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            );
-                                                        })()}
                                                     </div>
-                                                    {status === 'authenticated' && (() => {
-                                                        const catLevel = categoryLevels[categoryData.mainCategoryId];
-                                                        // Показуємо прогрес завжди (навіть якщо 0%)
-                                                        const progress = catLevel ? catLevel.progress : 0;
-                                                        return (
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full">
-                                                                    <div 
-                                                                        className="bg-green-500 dark:bg-green-600 h-2 rounded-full transition-all duration-300" 
-                                                                        style={{ width: `${progress}%` }}
-                                                                    ></div>
-                                                                </div>
-                                                                <span className="text-xs text-gray-700 dark:text-gray-300">
-                                                                    {progress}%
-                                                                </span>
-                                                            </div>
-                                                        );
-                                                    })()}
                                                 </div>
 
                                                 {/* Страви категорії */}
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                                                    {categoryData.dishes.map((dish) => {
-                                                        const catLevel = categoryLevels[categoryData.mainCategoryId];
-                                                        // Знижка тільки якщо є статистика (hasStats === true)
-                                                        const discount = catLevel && catLevel.hasStats ? Math.min(catLevel.level * 2, 20) : 0; // 2% за рівень, максимум 20%
-                                                        return (
-                                                            <MenuItem 
-                                                                key={dish.id} 
-                                                                dish={dish} 
-                                                                restaurantId={restaurantId}
-                                                                discount={discount}
-                                                            />
-                                                        );
-                                                    })}
+                                                    {categoryData.dishes.map((dish) => (
+                                                        <MenuItem
+                                                            key={dish.id}
+                                                            dish={dish}
+                                                            restaurantId={restaurantId}
+                                                        />
+                                                    ))}
                                                 </div>
                                             </div>
                                         );

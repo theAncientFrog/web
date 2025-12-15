@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
-import RestaurantCard from './RestaurantCard'; 
+import RestaurantCard from './RestaurantCard';
 import { ArrowRight } from 'lucide-react'; // Використовуємо стрілку
 
 // Тип для даних (як у API)
@@ -33,15 +33,38 @@ export default function EstablishmentsSection() {
             }
         }) // Викликаємо наш API, який повертає всі заклади
             .then(res => {
-                 if (!res.ok) throw new Error('Failed to fetch data.');
+                 if (!res.ok) {
+                     console.error('API Error:', res.status, res.statusText);
+                     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                 }
                  return res.json();
             })
             .then(data => {
-                setRestaurants(data);
+                if (Array.isArray(data)) {
+                    setRestaurants(data);
+                } else {
+                    console.error('Invalid response format:', data);
+                    setError(t('common.failed_to_load_establishments'));
+                }
             })
             .catch(err => {
-                setError(t('common.failed_to_load_establishments'));
-                console.error(err);
+                console.error('Failed to load establishments:', err);
+
+                let errorMessage = t('common.failed_to_load_establishments');
+
+                // Обробляємо різні типи помилок
+                if (err.name === 'AbortError') {
+                    errorMessage = t('common.request_timeout', { defaultValue: 'Request timeout' });
+                } else if (err.message.includes('fetch')) {
+                    errorMessage = t('common.network_error', { defaultValue: 'Network error' });
+                }
+
+                // Показуємо більш детальну помилку в режимі розробки
+                if (process.env.NODE_ENV === 'development') {
+                    setError(`${errorMessage}: ${err.message}`);
+                } else {
+                    setError(errorMessage);
+                }
             })
             .finally(() => {
                 setIsLoading(false);

@@ -50,11 +50,11 @@ export async function checkAndAwardAchievements(userId: number) {
         console.log(`[Achievements] 🔍 Початок перевірки ачівок для користувача ${userId}`);
         
         // 1. Отримуємо всі замовлення користувача
-        // Враховуємо лише завершені замовлення
+        // Враховуємо всі замовлення, крім скасованих (PENDING, PREPARING, READY, COMPLETED)
         const userOrders = await prisma.order.findMany({
             where: {
                 userId: userId,
-                status: 'COMPLETED'
+                status: { not: 'CANCELLED' }
             },
             select: { restaurantId: true } // Нам потрібні лише ID ресторанів
         });

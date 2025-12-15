@@ -89,6 +89,7 @@ export async function POST(request, { params }) {
                 description: data.description,
                 price: parseFloat(data.price), // Важливо: перетворюємо на число
                 calories: data.calories ? parseInt(data.calories) : null, // Калорії необов'язкові
+                allergens: data.allergens, // Алергени необов'язкові
                 imageUrl: data.imageUrl,
                 categoryId: categoryId, // Прив'язуємо до категорії
             },

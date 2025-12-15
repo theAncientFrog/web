@@ -86,15 +86,19 @@ export const CartProvider = ({ children }) => {
      */
     const addToCart = (dish, restaurantId) => {
         // Перевіряємо, чи ресторан збігається
-        if (cartItems.length > 0 && cartRestaurantId !== restaurantId) {
-            alert(
-                'Ваш кошик містить страви з іншого ресторану. ' +
-                'Будь ласка, очистіть кошик, перш ніж додавати нові страви.'
-            );
-            return; // ⬅️ Зупиняємо виконання
+        if (cartItems.length > 0 && cartRestaurantId && cartRestaurantId !== restaurantId) {
+            // Автоматично очищуємо кошик замість показу алерту
+            console.log('[CartContext] Clearing cart - switching from restaurant', cartRestaurantId, 'to', restaurantId);
+            setCartItems([]);
+            setCartRestaurantId(restaurantId);
+
+            // Показуємо повідомлення про очищення
+            setTimeout(() => {
+                alert('Кошик було очищено, оскільки ви перейшли до іншого ресторану.');
+            }, 100);
         }
 
-        // Якщо кошик був порожній, "блокуємо" його під цей ресторан
+        // Якщо кошик був порожній або щойно очищений, "блокуємо" його під цей ресторан
         if (cartItems.length === 0) {
             setCartRestaurantId(restaurantId);
         }

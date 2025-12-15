@@ -68,15 +68,30 @@ export async function POST(request: Request) {
     }
 
     const userIdRaw = session.user.id;
-    const numericUserId = typeof userIdRaw === 'string' ? parseInt(userIdRaw) : (userIdRaw as number);
-    
-    console.log('[Comments API] User ID from session:', {
+    console.log('[Comments API] Raw session user:', session.user);
+
+    let numericUserId: number;
+
+    if (typeof userIdRaw === 'string') {
+      numericUserId = parseInt(userIdRaw, 10);
+    } else if (typeof userIdRaw === 'number') {
+      numericUserId = userIdRaw;
+    } else {
+      console.log('[Comments API] Invalid user ID type:', typeof userIdRaw, userIdRaw);
+      return NextResponse.json(
+        { error: 'Неправильний тип ID користувача' },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Comments API] Debug user ID:', {
       raw: userIdRaw,
       type: typeof userIdRaw,
       numeric: numericUserId,
       isNaN: isNaN(numericUserId),
+      isValid: !isNaN(numericUserId) && numericUserId > 0
     });
-    
+
     if (isNaN(numericUserId) || !numericUserId) {
       return NextResponse.json(
         { error: 'Помилка ID користувача' },
@@ -91,25 +106,27 @@ export async function POST(request: Request) {
     });
 
     console.log('[Comments API] User lookup result:', {
-      found: !!user,
       userId: numericUserId,
-      userData: user,
+      found: !!user,
+      userData: user
     });
 
-    // Також перевіряємо всіх користувачів для діагностики
-    const allUsers = await prisma.user.findMany({
-      select: { id: true, email: true, name: true },
-      take: 5,
-    });
-    console.log('[Comments API] Sample users in DB:', allUsers);
-
+    // Якщо користувач не знайдений, спробуємо знайти всіх користувачів для діагностики
     if (!user) {
+      const allUsers = await prisma.user.findMany({
+        select: { id: true, email: true, name: true },
+        take: 10,
+      });
+
+      console.log('[Comments API] All users in DB:', allUsers.map(u => ({ id: u.id, email: u.email, name: u.name })));
+
       return NextResponse.json(
-        { 
+        {
           error: 'Користувач не знайдено',
           debug: {
-            requestedUserId: numericUserId,
-            sampleUserIds: allUsers.map(u => u.id),
+            requestedId: numericUserId,
+            availableIds: allUsers.map(u => u.id),
+            sessionUserId: userIdRaw
           }
         },
         { status: 404 }
@@ -117,11 +134,19 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { dishId, text } = body;
+    const { dishId, text, rating } = body;
 
     if (!dishId || !text || !text.trim()) {
       return NextResponse.json(
         { error: 'dishId and text are required' },
+        { status: 400 }
+      );
+    }
+
+    // Валідація рейтингу (якщо він наданий)
+    if (rating !== undefined && (rating < 1 || rating > 5)) {
+      return NextResponse.json(
+        { error: 'Rating must be between 1 and 5' },
         { status: 400 }
       );
     }
@@ -146,10 +171,26 @@ export async function POST(request: Request) {
       );
     }
 
+    // Перевіряємо, чи користувач вже залишав коментар до цієї страви
+    const existingComment = await prisma.comment.findFirst({
+      where: {
+        userId: numericUserId,
+        dishId: numericDishId,
+      },
+    });
+
+    if (existingComment) {
+      return NextResponse.json(
+        { error: 'Ви вже залишали коментар до цієї страви' },
+        { status: 400 }
+      );
+    }
+
     try {
       const comment = await prisma.comment.create({
         data: {
           text: text.trim(),
+          rating: rating || null,
           userId: numericUserId,
           dishId: numericDishId,
         },

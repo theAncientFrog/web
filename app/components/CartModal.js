@@ -1,7 +1,7 @@
 // app/components/CartModal.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext'; 
 import { useTranslation } from 'react-i18next';
 import Image from 'next/image';
@@ -11,6 +11,14 @@ import OrderNotificationModal from './OrderNotificationModal';
 export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }) {
     const { t, i18n } = useTranslation();
     const { cartItems, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+
+    // Перевірка кошика при відкритті (тільки логування)
+    useEffect(() => {
+        if (isOpen && cartItems.length > 0) {
+            console.log('[CartModal] Cart items on open:', cartItems.map(item => ({ id: item.id, name: item.name, quantity: item.quantity })));
+            console.log('[CartModal] Current restaurant ID:', restaurantId);
+        }
+    }, [isOpen, cartItems, restaurantId]);
     
     // Визначаємо поточну мову для локалізації назв страв
     const currentLang = i18n?.language || 'ua';
@@ -42,11 +50,22 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
     const handlePlaceOrder = async () => {
         setIsLoading(true);
         setError('');
-        
+
+        // Перевірка, чи кошик не порожній
+        if (cartItems.length === 0) {
+            setError('Ваш кошик порожній. Додайте страви перед оформленням замовлення.');
+            setIsLoading(false);
+            return;
+        }
+
         const itemsForApi = cartItems.map(item => ({
             dishId: item.id,
             quantity: item.quantity
         }));
+
+        console.log('[CartModal] Cart items for API:', itemsForApi);
+        console.log('[CartModal] Restaurant ID:', restaurantId);
+        console.log('[CartModal] Table number:', tableNumber);
 
         if (!restaurantId) {
             setError('Помилка: не вдалося визначити ресторан. Оновіть сторінку.');
@@ -79,6 +98,10 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
             const data = await res.json();
 
             if (!res.ok) {
+                console.error('[CartModal] Order failed:', data);
+                console.error('[CartModal] Failed cart items:', itemsForApi);
+                console.error('[CartModal] Restaurant ID:', restaurantId);
+
                 throw new Error(data.message || 'Failed to place order');
             }
 
@@ -110,7 +133,14 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
             console.error('Order error:', err);
             // Покращена обробка помилок
             if (err instanceof Error) {
-                setError(`Помилка замовлення: ${err.message}`);
+                let errorMessage = `Помилка замовлення: ${err.message}`;
+
+                // Для помилок зв'язку даних пропонуємо очистити кошик
+                if (err.message.includes('зв\'язку даних') || err.message.includes('не знайдено')) {
+                    errorMessage += '\n\nРекомендація: очистіть кошик і додайте страви знову.';
+                }
+
+                setError(errorMessage);
             } else {
                 setError('Сталася невідома помилка при замовленні');
             }
@@ -216,9 +246,27 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 {/* loginError (з адаптованими margin) */}
                 {error && (
                     <div className="px-6 pb-4">
-                        <p className="text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-3 text-sm text-center">
-                            {error}
-                        </p>
+                        <div className="text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-3 text-sm">
+                            <p className="text-center mb-3 font-medium">{error}</p>
+                            <div className="flex justify-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        clearCart();
+                                        setError('');
+                                        alert('Кошик очищено! Тепер додайте страви знову.');
+                                    }}
+                                    className="text-xs bg-red-600 text-white px-3 py-1.5 rounded hover:bg-red-700 font-medium"
+                                >
+                                    🗑️ Очистити кошик
+                                </button>
+                                <button
+                                    onClick={() => setError('')}
+                                    className="text-xs bg-gray-500 text-white px-3 py-1.5 rounded hover:bg-gray-600"
+                                >
+                                    Закрити
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -234,7 +282,7 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                         <button
                             className="w-full px-4 py-2.5 sm:py-3 rounded-lg font-medium text-sm sm:text-base bg-green-600 text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
                             onClick={handlePlaceOrder}
-                            disabled={isLoading}
+                            disabled={isLoading || cartItems.length === 0 || !!error}
                         >
                             {isLoading ? t('common.processing') : t('common.order')}
                         </button>
