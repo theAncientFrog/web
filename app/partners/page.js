@@ -5,10 +5,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import Header from '../components/Header'; // Ваш Header.tsx
+import Header from '../components/Header';
 import Footer from '../components/Footer';
 import RestaurantCard from '../components/RestaurantCard';
 import ProfileModal from '../components/ProfileModal';
+import { useTranslation } from 'react-i18next';
 
 // (JSDoc та StarRating залишаємо без змін)
 /**
@@ -35,7 +36,9 @@ const StarRating = ({ rating }) => {
 
 
 export default function PartnersPage() {
+    const { t } = useTranslation();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     const [restaurants, setRestaurants] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -44,10 +47,14 @@ export default function PartnersPage() {
     const defaultBanner = '/images/default_banner.jpg';
     const defaultLogo = '/images/default_logo.png';
 
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // Завантаження даних
     useEffect(() => {
         setIsLoading(true);
-        fetch('/api/partners') // Використовуємо ваш API
+        fetch('/api/partners')
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch partners data.');
                 return res.json();
@@ -57,19 +64,24 @@ export default function PartnersPage() {
                 setIsLoading(false);
             })
             .catch(err => {
-                setError('Не вдалося завантажити список ресторанів.');
+                setError(t('common.failed_to_load_establishments'));
                 setIsLoading(false);
             });
     }, []);
 
     const renderStarRating = (rating) => <StarRating rating={rating} />;
 
+    // Уникаємо помилок гідрації: рендеримо контент лише після монтування на клієнті
+    if (!mounted) {
+        return null;
+    }
+
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
 
             <Header 
-                breadcrumpText="Breadcrumb"
+                breadcrumpText={t('footer.breadcrumb')}
                 onProfileClick={() => setIsProfileOpen(true)} 
             />
 
@@ -81,13 +93,19 @@ export default function PartnersPage() {
             {/* ОСНОВНИЙ КОНТЕНТ */}
             <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
-                    Усі Партнери
+                    {t('footer.partners')}
                 </h1>
 
                 {isLoading ? (
-                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">Завантаження...</div>
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">
+                        {t('common.loading_establishments')}
+                    </div>
                 ) : error ? (
                     <div className="text-center text-red-600 dark:text-red-400 py-10">{error}</div>
+                ) : restaurants.length === 0 ? (
+                    <div className="text-center text-gray-500 dark:text-gray-400 py-10">
+                        {t('common.no_establishments_available')}
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {restaurants.map((restaurant) => (

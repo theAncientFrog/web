@@ -11,11 +11,13 @@ interface RecentRestaurant {
     id: number;
     name: string;
     logoUrl?: string;
+    bannerUrl?: string;
     lastVisited: string;
 }
 
 const MOCK_COLORS = ['bg-black', 'bg-green-600', 'bg-red-600', 'bg-indigo-600', 'bg-teal-600'];
-const DEFAULT_LOGO_URL = '/images/nazva_logo.png'; // Заглушка
+// Правильний шлях до дефолтного лого (файл існує у public/images/logo_nazva.png)
+const DEFAULT_LOGO_URL = '/images/logo_nazva.png';
 
 export default function RecentlyVisited() {
     const { status } = useSession(); 
@@ -73,6 +75,7 @@ export default function RecentlyVisited() {
                     {recent.map((item, index) => {
                         const colorClass = MOCK_COLORS[index % MOCK_COLORS.length];
                         const dateText = formatDate(item.lastVisited);
+                        const imageSrc = item.bannerUrl || item.logoUrl || DEFAULT_LOGO_URL;
                         
                         return (
                             <Link 
@@ -81,13 +84,12 @@ export default function RecentlyVisited() {
                                 className="flex flex-col items-center no-underline text-gray-800 dark:text-gray-200 transition hover:opacity-80 flex-shrink-0"
                             >
                                 <div className={`w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-xl overflow-hidden shadow-md dark:shadow-lg mb-2 ${colorClass} flex items-center justify-center`}>
-                                    {/* ⬅️ Використовуємо logoUrl з API */}
                                     <Image
-                                        src={item.logoUrl || DEFAULT_LOGO_URL}
+                                        src={imageSrc}
                                         alt={item.name}
                                         width={80}
                                         height={80}
-                                        className="object-cover w-full h-full opacity-60"
+                                        className="object-cover w-full h-full"
                                     />
                                 </div>
                                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">

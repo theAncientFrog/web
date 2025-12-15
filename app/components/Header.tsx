@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
     breadcrumpText?: string;
@@ -14,12 +14,16 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({
-                                           breadcrumpText = "Breadcrumb",
-                                           description = "Смак починається з меню",
+                                           breadcrumpText,
+                                           description,
                                            onProfileClick
                                        }) => {
     const { data: session } = useSession();
     const userImage = session?.user?.image;
+    const { t } = useTranslation();
+
+    const titleText = breadcrumpText || t('footer.breadcrumb');
+    const descText = description || t('footer.tagline');
 
     return (
         <header className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
@@ -29,10 +33,10 @@ const Header: React.FC<HeaderProps> = ({
                 <Link href="/homepage" passHref legacyBehavior>
                     <div className="flex flex-col cursor-pointer hover:opacity-90 transition-opacity min-w-0 flex-1">
                         <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-green-600 dark:text-green-400 truncate">
-                            {breadcrumpText}
+                            {titleText}
                         </h1>
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
-                            {description}
+                            {descText}
                         </p>
                     </div>
                 </Link>

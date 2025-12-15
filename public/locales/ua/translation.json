@@ -78,6 +78,24 @@
     "no_establishments_available": "Наразі немає доступних закладів.",
     "failed_to_load_establishments": "Не вдалося завантажити список закладів."
   },
+  "orders": {
+    "title": "Мої замовлення",
+    "empty": "Ви ще не робили замовлень.",
+    "loading": "Завантаження замовлень...",
+    "failed": "Не вдалося завантажити історію замовлень.",
+    "status_pending": "Очікує прийняття",
+    "status_preparing": "Готується",
+    "status_ready": "Готове до видачі!",
+    "status_completed": "Завершено",
+    "status_cancelled": "Скасовано",
+    "view_order": "Переглянути замовлення",
+    "no_details": "Деталі відсутні",
+    "close": "Закрити",
+    "date_label": "Дата",
+    "success_title": "Замовлення успішно оформлено!",
+    "success_message": "Ваше замовлення прийнято в обробку. Очікуйте підтвердження від кухні.",
+    "order_label": "Замовлення"
+  },
   "footer": {
     "breadcrumb": "Breadcrumb",
     "tagline": "Смак починається з меню",

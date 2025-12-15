@@ -77,10 +77,14 @@ export default function RestaurantCard({ restaurant }) {
             {/* 3. Текстовий контент */}
             <div className="p-3 sm:p-4 relative">
                 {/* Назва */}
-                <h2 className="text-lg sm:text-xl font-bold mb-1 text-gray-900 dark:text-white line-clamp-1">{restaurant.name}</h2>
+                <h2 className="text-lg sm:text-xl font-bold mb-1 text-gray-900 dark:text-white line-clamp-1">
+                    {restaurant.name}
+                </h2>
                 
                 {/* Опис */}
-                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 line-clamp-2">{restaurant.description || ''}</p>
+                <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1 line-clamp-2">
+                    {restaurant.description || ''}
+                </p>
                 
                 {/* Адреса */}
                 <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 sm:mb-3 line-clamp-1">{restaurant.address || t('menu.address_missing')}</p>

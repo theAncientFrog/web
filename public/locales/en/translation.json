@@ -78,6 +78,24 @@
     "no_establishments_available": "No establishments available at the moment.",
     "failed_to_load_establishments": "Failed to load establishments list."
   },
+  "orders": {
+    "title": "My Orders",
+    "empty": "You haven't placed any orders yet.",
+    "loading": "Loading orders...",
+    "failed": "Failed to load order history.",
+    "status_pending": "Waiting for acceptance",
+    "status_preparing": "Preparing",
+    "status_ready": "Ready for pickup!",
+    "status_completed": "Completed",
+    "status_cancelled": "Cancelled",
+    "view_order": "View order",
+    "no_details": "No details available",
+    "close": "Close",
+    "date_label": "Date",
+    "success_title": "Order placed successfully!",
+    "success_message": "Your order has been sent to the kitchen. Please wait for confirmation.",
+    "order_label": "Order"
+  },
   "footer": {
     "breadcrumb": "Breadcrumb",
     "tagline": "Taste starts with the menu",

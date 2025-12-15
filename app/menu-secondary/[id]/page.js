@@ -1064,15 +1064,6 @@ function MenuSecondaryContent() {
 }
 
 export default function MenuSecondaryPage() {
-    const { t } = useTranslation();
-    
-    return (
-        <Suspense fallback={
-            <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
-                <div className="text-gray-500 dark:text-gray-400">{t('common.loading')}</div>
-            </div>
-        }>
-            <MenuSecondaryContent />
-        </Suspense>
-    );
+    // Прибрали Suspense, щоб уникнути помилок гідрації з i18n
+    return <MenuSecondaryContent />;
 }

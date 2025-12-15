@@ -92,22 +92,19 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
                 totalPrice: cartTotal,
                 tableNumber: tableNumber,
             };
-            
-            // Очищаємо кошик та закриваємо модалку одразу
+
+            // Очищаємо кошик
             clearCart();
-            onClose();
-            
-            // Показуємо повідомлення про успіх після закриття кошика
-            setTimeout(() => {
-                setNotification({
-                    isOpen: true,
-                    type: 'success',
-                    title: 'Замовлення успішно оформлено!',
-                    message: 'Ваше замовлення прийнято в обробку. Очікуйте підтвердження від кухні.',
-                    orderId: data.order?.id || null,
-                    orderDetails: orderDetails,
-                });
-            }, 100);
+
+            // Відкриваємо красиве сповіщення поверх кошика (кошик закриємо після кліку / автозакриття)
+            setNotification({
+                isOpen: true,
+                type: 'success',
+                title: t('orders.success_title'),
+                message: t('orders.success_message'),
+                orderId: data.orderId || data.order?.id || null,
+                orderDetails: orderDetails,
+            });
 
         } catch (err) {
             console.error('Order error:', err);
@@ -129,7 +126,10 @@ export default function CartModal({ isOpen, onClose, restaurantId, tableNumber }
             {/* Модалка сповіщень */}
             <OrderNotificationModal
                 isOpen={notification.isOpen}
-                onClose={() => setNotification(prev => ({ ...prev, isOpen: false }))}
+                onClose={() => {
+                    setNotification(prev => ({ ...prev, isOpen: false }));
+                    onClose();
+                }}
                 type={notification.type}
                 title={notification.title}
                 message={notification.message}
