@@ -40,12 +40,13 @@ const StarRating = ({ rating }) => {
  */
 export default function RestaurantCard({ restaurant }) {
     const { t } = useTranslation();
-    
+
     // Заглушки
-    const defaultBanner = '/images/default_banner.jpg'; 
-    const defaultLogo = '/images/default_logo.png'; 
+    const defaultBanner = '/images/default_banner.jpg';
+    const defaultLogo = '/images/default_logo.png';
     // Використовуємо реальні зірки або заглушку (наприклад, 4.0)
-    const rating = restaurant.stars || 4.0; 
+    const rating = restaurant.stars || 4.0;
+
 
     return (
         // Обгортка Link для переходу
@@ -60,6 +61,7 @@ export default function RestaurantCard({ restaurant }) {
                     alt={`Banner for ${restaurant.name}`}
                     fill
                     className="object-cover"
+                    unoptimized={true}
                 />
                 
                 {/* 2. Логотип (зліва вгорі, в кругу) - Імітуємо дизайн зі скріншота */}
@@ -70,6 +72,7 @@ export default function RestaurantCard({ restaurant }) {
                         width={48}
                         height={48}
                         className="object-cover rounded-full"
+                        unoptimized={true}
                     />
                 </div>
             </div>

@@ -445,11 +445,12 @@ function MenuSecondaryContent() {
                                 {/* Логотип */}
                                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex-shrink-0 overflow-hidden">
                                     <Image
-                                        src={logoUrl || defaultPlaceholder}
+                                        src={logoUrl || '/images/default_logo.png'}
                                         alt={`${name} Logo`}
                                         width={56}
                                         height={56}
                                         className="object-cover w-full h-full"
+                                        unoptimized={true}
                                     />
                                 </div>
 
