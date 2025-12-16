@@ -1,13 +1,13 @@
 // app/login/page.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
 import { Mail, Lock, User, LogIn, Building2 } from 'lucide-react'; 
 
-export default function LoginPage() {
+function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -225,5 +225,19 @@ export default function LoginPage() {
                 </div>
             </div>
         </main>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <main className="w-full min-h-screen flex flex-col justify-center items-center p-4 bg-gray-100">
+                <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-10 max-w-md w-full">
+                    <div className="p-8 text-center text-gray-500">Завантаження...</div>
+                </div>
+            </main>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }

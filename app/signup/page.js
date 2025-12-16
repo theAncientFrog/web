@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Building2, User } from 'lucide-react';
 
-export default function SignupPage() {
+function SignupForm() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -212,5 +212,25 @@ export default function SignupPage() {
                 </div>
             </div>
         </main>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={
+            <main className="w-full min-h-screen flex flex-col justify-center items-center p-4 bg-gray-100">
+                <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-10 max-w-md w-full">
+                    <div className="animate-pulse">
+                        <div className="h-8 bg-gray-200 rounded mb-6"></div>
+                        <div className="h-10 bg-gray-200 rounded mb-4"></div>
+                        <div className="h-10 bg-gray-200 rounded mb-4"></div>
+                        <div className="h-10 bg-gray-200 rounded mb-4"></div>
+                        <div className="h-12 bg-gray-200 rounded"></div>
+                    </div>
+                </div>
+            </main>
+        }>
+            <SignupForm />
+        </Suspense>
     );
 }
