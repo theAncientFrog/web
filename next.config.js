@@ -9,7 +9,19 @@ const nextConfig = {
         ignoreBuildErrors: true,
     },
     images: {
+        // Дозволяємо небезпечні зображення (для Supabase та інших зовнішніх доменів)
+        dangerouslyAllowSVG: true,
+        contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+        // Вимикаємо оптимізацію зображень для зовнішніх доменів (Supabase)
+        // Зображення з Supabase вже використовують unoptimized={true} в компонентах
+        unoptimized: false, // false для оптимізації, але unoptimized={true} в компонентах має пріоритет
         remotePatterns: [
+            // Supabase Storage - додайте конкретний домен вашого Supabase проекту
+            // Формат: { protocol: 'https', hostname: 'your-project-id.supabase.co' }
+            // Увага: Next.js не підтримує wildcard в hostname
+            // Але з unoptimized={true} в компонентах зображення мають працювати навіть без додавання домену тут
+            // Якщо потрібно оптимізувати зображення, додайте ваш конкретний домен Supabase нижче:
+            // Приклад: { protocol: 'https', hostname: 'abcdefghijklmnop.supabase.co' }
             // NextAuth/Google Photos
             { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
             // Власні домени та CDN

@@ -243,6 +243,7 @@ export default function MenuPage() {
                                     width={64}
                                     height={64}
                                     className="object-cover w-full h-full"
+                                    unoptimized={true}
                                 />
                             </div>
 

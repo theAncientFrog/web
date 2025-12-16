@@ -90,6 +90,7 @@ export default function RecentlyVisited() {
                                         width={80}
                                         height={80}
                                         className="object-cover w-full h-full"
+                                        unoptimized={true}
                                     />
                                 </div>
                                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400 text-center">

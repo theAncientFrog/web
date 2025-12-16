@@ -137,6 +137,7 @@ export default function ManageRestaurantsPage() {
                                                 alt={restaurant.name}
                                                 fill
                                                 className="object-cover"
+                                                unoptimized={true}
                                             />
                                         </div>
                                         {/* manageRestaurantInfo */}
