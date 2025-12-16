@@ -606,7 +606,7 @@ async function main() {
             name: 'Flat5',
             description: 'A warm and welcoming place for coffee lovers',
             bannerUrl: 'https://cdn-media.choiceqr.com/prod-eat-flat5/aXyIeko-egYJPqB-XimVTlX.jpeg.webp',
-            logoUrl: 'https://instagram.fiev13-1.fna.fbcdn.net/v/t51.2885-19/573225613_18049963178670553_8013675427755324872_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fiev13-1.fna.fbcdn.net&_nc_cat=101&_nc_oc=Q6cZ2QGzsHWf2DPwF1OGbEO5dLHtbk0SVDaW-TIsWVKqgiEEL5hHWKGSiMKBa-rjQ00epdo&_nc_ohc=1Af_8ueBRvQQ7kNvwHJMjrd&_nc_gid=AWwWMCMTUTepMhv8e83dtg&edm=ALGbJPMBAAAA&ccb=7-5&oh=00_AfjeA5FrMUhbV7DmnVmWm4VMiY5F9yooS66Zg5_z72v5Cg&oe=693280B8&_nc_sid=7d3ac5',
+            logoUrl: 'https://scontent-waw2-2.cdninstagram.com/v/t51.2885-19/573225613_18049963178670553_8013675427755324872_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=scontent-waw2-2.cdninstagram.com&_nc_cat=101&_nc_oc=Q6cZ2QFd64fKnQI-e76btIcdGBCmldk5HdGro_nDsurrWh98WU_8NSHiL7A7xqH7qnqTrys&_nc_ohc=fsjC5-QcRakQ7kNvwEskbm3&_nc_gid=9OAUGSRi_8BJSpvQfKnW_g&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_Afl5xpd7LhVe56Gxu826-nQBDOzXkUPzP97RxOz6oMf9Dg&oe=6946EFF8&_nc_sid=7a9f4b',
             ownerId: owner.id,
         },
     });
@@ -624,7 +624,7 @@ async function main() {
             name: 'BaboGarden',
             description: 'Вишукана європейська кухня преміум класу',
             bannerUrl: 'https://production.api.restaron.kitg.com.ua/public/lending/mainSlider/6889e150a96448e396c63ef2_image.jpg',
-            logoUrl: 'https://instagram.fiev13-1.fna.fbcdn.net/v/t51.2885-19/485447827_1345673003149287_6010484723226474993_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby42MDAuYzIifQ&_nc_ht=instagram.fiev13-1.fna.fbcdn.net&_nc_cat=103&_nc_oc=Q6cZ2QGwG0XSMvR2hBT9xSlzXVQsHbEAeS6rH988vVjL0e25xOjReLZ_dodYopx-ULyunms&_nc_ohc=9PYnmC0D1q4Q7kNvwF_S_8x&_nc_gid=rEvXXE8zuzkASwLrKxOLcQ&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_Afgl8PGhe9jp6oIx7xpjqnH3Sb6GbYfIaBmdOvEwjj-sjA&oe=69328CC8&_nc_sid=7a9f4b',
+            logoUrl: 'https://scontent-waw2-2.cdninstagram.com/v/t51.2885-19/485447827_1345673003149287_6010484723226474993_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby42MDAuYzIifQ&_nc_ht=scontent-waw2-2.cdninstagram.com&_nc_cat=103&_nc_oc=Q6cZ2QH07aLAuSJmPcSy6zNNFmZ0uCqx78Yf5nxQwXtZsqGMqYYwhT69jG6kw8TBIDxl_6Y&_nc_ohc=h6Bxbqvbs30Q7kNvwFZVwex&_nc_gid=vsROHzv7c7OQQ7oDgWK5Cg&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_AfnrGgkluWxlHJKr_CCq2eQH7dKZPJf4ULxZFQ1BuzftUw&oe=6946FC08&_nc_sid=7a9f4b',
             ownerId: owner.id,
         },
     });
@@ -639,7 +639,7 @@ async function main() {
             name: 'Пструг',
             description: 'Рибний ресторан з автентичною кухнею',
             bannerUrl: 'https://www.lvivconvention.com.ua/wp-content/uploads/2021/03/Pstruhkhlib-ta-vyno-nadano-festom-8-scaled.jpg',
-            logoUrl: 'https://instagram.fiev13-1.fna.fbcdn.net/v/t51.2885-19/433138897_947732130234264_3521150477103078962_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fiev13-1.fna.fbcdn.net&_nc_cat=100&_nc_oc=Q6cZ2QEmQCutJ2WPbniaruGzFnf0WZgGd0SUfqeoIqBPd920YfMgXg-S-GcuUQmSjycxthc&_nc_ohc=F-RkIvIRiv4Q7kNvwHpS24w&_nc_gid=4VX8kFr63L79py8FjhD8dg&edm=ALGbJPMBAAAA&ccb=7-5&oh=00_Afi3tb4o5SwuZudq-aLSgYUGc-aHoM91i55mVqqi76KrGg&oe=693282D1&_nc_sid=7d3ac5',
+            logoUrl: 'https://scontent-waw2-2.cdninstagram.com/v/t51.2885-19/433138897_947732130234264_3521150477103078962_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=scontent-waw2-2.cdninstagram.com&_nc_cat=100&_nc_oc=Q6cZ2QEDOfB14MFed9uG_t5S7IhEaHEn1Vs8eNCX-QBZF-ZVIux0Ek5qlsPrI5OV3SjmE58&_nc_ohc=69lRxBxBvgkQ7kNvwHc3_4d&_nc_gid=WiGrohW9O_Gdj6TKBw8bDQ&edm=ALGbJPMBAAAA&ccb=7-5&oh=00_AfmI0ztqb-ulDP46Eq9FkALwvZvf7vYCXpRkbxRpYBt-Jg&oe=6946F211&_nc_sid=7d3ac5',
             ownerId: owner.id,
         },
     });
@@ -654,7 +654,7 @@ async function main() {
             name: 'Сицилійський дворик',
             description: 'Італійська атмосфера та кухня',
             bannerUrl: 'https://posteat.ua/wp-content/uploads/2023/06/343418019_2150965938436876_1734399969313336000_n-1-1-1-min.jpg',
-            logoUrl: 'https://instagram.fiev13-1.fna.fbcdn.net/v/t51.2885-19/334844354_227606193069043_7988247861179557118_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4zMjAuYzIifQ&_nc_ht=instagram.fiev13-1.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2QF5IvNZVCduQueXrEnpsKWytlezqIE9vuxvQeGw5zIl4xUF1UOatgDolaXAxMu8xb8&_nc_ohc=aHnMqE6ONx8Q7kNvwGVHFor&_nc_gid=CKf3o-j24eCUVAcus0bubA&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_AfilmiLcCxNNsZ0_9VVPg8vzR8DxAG4XYEAooWbjXwEprA&oe=69329DBB&_nc_sid=7a9f4b',
+            logoUrl: 'https://scontent-waw2-2.cdninstagram.com/v/t51.2885-19/334844354_227606193069043_7988247861179557118_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4zMjAuYzIifQ&_nc_ht=scontent-waw2-2.cdninstagram.com&_nc_cat=107&_nc_oc=Q6cZ2QEtsWWS63dodWKddOzSRp1JE2Um35ZDpho9wwR1GnHhiGd8QzUeFdKVwG3Bn680idg&_nc_ohc=tih3q9ireQIQ7kNvwEoLXEi&_nc_gid=iSqmkYXy1yf50CU5h3LOaQ&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_AflEt5N5imL3CDlhbMF-CRwXQ8rotl70gzXANxbsxpuZUw&oe=6946D4BB&_nc_sid=7a9f4b',
             ownerId: owner.id,
         },
     });
@@ -669,7 +669,7 @@ async function main() {
             name: 'Cheese bakery',
             description: 'Сирна випічка та кавові спеціалітети',
             bannerUrl: 'https://lviv.travel/image/seo/07/e4/07e4407455b8faa3355271032d931f1e2c8a8ab1_1666257298.jpg?crop=960%2C504%2C3%2C22&w=1200&h=630',
-            logoUrl: 'https://instagram.fiev13-1.fna.fbcdn.net/v/t51.2885-19/552703182_18423040081110729_1365917561731406789_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby41MTIuYzIifQ&_nc_ht=instagram.fiev13-1.fna.fbcdn.net&_nc_cat=109&_nc_oc=Q6cZ2QFQeaXAwkf95ZdolRnq8nLbQnUObKBixPr8ZkvVugcQm-QoFt2MnCC4q54KLk1oDU4&_nc_ohc=6jfk8Dx06r0Q7kNvwG4aQrs&_nc_gid=8mOVOHAggOodgTyT2KjmPw&edm=ALGbJPMBAAAA&ccb=7-5&oh=00_AfjG6Yf20szCpJiCoEiXHOlXPHggCxEgRQEhLRbaE-Bfzg&oe=693294B9&_nc_sid=7d3ac5',
+            logoUrl: 'https://scontent-waw2-1.cdninstagram.com/v/t51.2885-19/552703182_18423040081110729_1365917561731406789_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby41MTIuYzIifQ&_nc_ht=scontent-waw2-1.cdninstagram.com&_nc_cat=109&_nc_oc=Q6cZ2QEtGNyVzPopvWEeb-xKTUIN8aTLAKH-n3FQIcmzC0lrz7a4LFQ2aqiZ8LuBafXEl8Q&_nc_ohc=wo2tt4IGb2sQ7kNvwFKuG0c&_nc_gid=qOIQTz0jlspdUGrmZkPYhA&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_AflvSwrTtgRPush853IuAZYe1-gRdnpKFBHQ3N_hSkMLYQ&oe=694703F9&_nc_sid=7a9f4b',
             ownerId: owner.id,
         },
     });
